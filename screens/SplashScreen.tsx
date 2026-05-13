@@ -23,6 +23,7 @@ export default function SplashScreen({ navigation }: any) {
       <LinearGradient colors={[Colors.primary, Colors.primaryDark]} style={StyleSheet.absoluteFill} />
       <Animated.View style={{ opacity: fade, alignItems: 'center' }}>
         <View style={styles.logoBadge}>
+          {/* @ts-ignore */}
           <Leaf color={Colors.white} size={50} strokeWidth={1.5} />
         </View>
         <Text style={styles.title}>BorlaMan</Text>

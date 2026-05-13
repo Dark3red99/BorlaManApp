@@ -6,6 +6,7 @@ export const Colors = {
   white: '#FFFFFF',
   text: '#121212',          // Nearly black
   textLight: '#666666',
+  textDark: '#000000',      // Pure black for titles
   
   // Glassmorphism specific
   glassBg: 'rgba(255, 255, 255, 0.7)',
