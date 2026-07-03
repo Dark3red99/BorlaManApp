@@ -10,7 +10,7 @@ import {
   Easing,
   Dimensions,
 } from 'react-native';
-import Svg, { Path, Circle, G, Defs, RadialGradient, Stop } from 'react-native-svg';
+import Svg, { Path } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 
 const { width, height } = Dimensions.get('window');
@@ -21,8 +21,7 @@ const TEXT        = '#0F172A';
 const WHITE       = '#FFFFFF';
 
 // ─── Animated SVG components ───────────────────────────────────────────
-const AnimatedCircle = Animated.createAnimatedComponent(Circle);
-const AnimatedPath   = Animated.createAnimatedComponent(Path);
+const AnimatedPath = Animated.createAnimatedComponent(Path);
 
 // ─── Confetti config ───────────────────────────────────────────────────
 const CONFETTI_COLORS = [
@@ -41,18 +40,6 @@ const CONFETTI = Array.from({ length: 26 }, (_, i) => ({
   isRect: i % 3 === 0,
   rotate: Math.random() * 360,
 }));
-
-// ─── Sparkle positions around checkmark ───────────────────────────────
-const SPARKLES = [
-  { angle: 0,   dist: 90, size: 8,  delay: 900  },
-  { angle: 45,  dist: 80, size: 6,  delay: 1000 },
-  { angle: 90,  dist: 90, size: 10, delay: 950  },
-  { angle: 135, dist: 80, size: 5,  delay: 1050 },
-  { angle: 180, dist: 90, size: 8,  delay: 900  },
-  { angle: 225, dist: 80, size: 6,  delay: 1000 },
-  { angle: 270, dist: 90, size: 9,  delay: 950  },
-  { angle: 315, dist: 75, size: 5,  delay: 1050 },
-];
 
 // ─── ConfettiPiece ─────────────────────────────────────────────────────
 function ConfettiPiece({ item }: { item: typeof CONFETTI[0] }) {
@@ -105,136 +92,35 @@ function ConfettiPiece({ item }: { item: typeof CONFETTI[0] }) {
   );
 }
 
-// ─── Sparkle ───────────────────────────────────────────────────────────
-function Sparkle({ angle, dist, size, delay }: typeof SPARKLES[0]) {
-  const scale   = useRef(new Animated.Value(0)).current;
-  const opacity = useRef(new Animated.Value(0)).current;
-
-  const rad = (angle * Math.PI) / 180;
-  const cx  = Math.cos(rad) * dist;
-  const cy  = Math.sin(rad) * dist;
-
-  useEffect(() => {
-    Animated.sequence([
-      Animated.delay(delay),
-      Animated.parallel([
-        Animated.spring(scale, { toValue: 1, useNativeDriver: true, damping: 6, stiffness: 200 }),
-        Animated.timing(opacity, { toValue: 1, duration: 200, useNativeDriver: true }),
-      ]),
-      Animated.delay(400),
-      Animated.timing(opacity, { toValue: 0, duration: 400, useNativeDriver: true }),
-    ]).start();
-  }, []);
-
-  return (
-    <Animated.View
-      style={{
-        position: 'absolute',
-        width: size,
-        height: size,
-        backgroundColor: '#F59E0B',
-        borderRadius: size / 2,
-        transform: [{ translateX: cx }, { translateY: cy }, { scale }],
-        opacity,
-      }}
-    />
-  );
-}
-
-// ─── Pulse Ring ────────────────────────────────────────────────────────
-function PulseRing({ delay }: { delay: number }) {
-  const scale   = useRef(new Animated.Value(0.8)).current;
-  const opacity = useRef(new Animated.Value(0.6)).current;
-
-  useEffect(() => {
-    const loop = () => {
-      scale.setValue(0.8);
-      opacity.setValue(0.5);
-      Animated.parallel([
-        Animated.timing(scale,   { toValue: 1.6, duration: 1200, delay, useNativeDriver: true, easing: Easing.out(Easing.ease) }),
-        Animated.timing(opacity, { toValue: 0,   duration: 1200, delay, useNativeDriver: true }),
-      ]).start(() => loop());
-    };
-    loop();
-  }, []);
-
-  return (
-    <Animated.View
-      pointerEvents="none"
-      style={{
-        position: 'absolute',
-        width: 140,
-        height: 140,
-        borderRadius: 70,
-        borderWidth: 3,
-        borderColor: MID_GREEN,
-        opacity,
-        transform: [{ scale }],
-      }}
-    />
-  );
-}
-
 // ─── Animated Checkmark Circle ─────────────────────────────────────────
-const CHECK_CIRCLE_R   = 52;
-const CHECK_DASH_TOTAL = 2 * Math.PI * CHECK_CIRCLE_R; // ~326.7
-const CHECK_PATH_LEN   = 88; // approx length of checkmark path
+// Flat solid circle (no gradient/"orb" look) + a single soft shadow for
+// depth, with the checkmark stroke drawing in after a spring pop-in.
+const CHECK_PATH_LEN = 46; // length of the checkmark path below
 
 function CheckmarkCircle() {
-  const circleProgress = useRef(new Animated.Value(CHECK_DASH_TOTAL)).current;
-  const checkProgress  = useRef(new Animated.Value(CHECK_PATH_LEN)).current;
+  const checkProgress = useRef(new Animated.Value(CHECK_PATH_LEN)).current;
   const scaleAnim      = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.sequence([
       Animated.spring(scaleAnim, {
-        toValue: 1, useNativeDriver: false,
-        damping: 7, stiffness: 160, delay: 200,
-      }),
-      Animated.timing(circleProgress, {
-        toValue: 0, duration: 600,
-        useNativeDriver: false, easing: Easing.out(Easing.cubic),
+        toValue: 1, useNativeDriver: true,
+        damping: 9, stiffness: 170, delay: 150,
       }),
       Animated.timing(checkProgress, {
-        toValue: 0, duration: 450,
+        toValue: 0, duration: 380,
         useNativeDriver: false, easing: Easing.out(Easing.cubic),
       }),
     ]).start();
   }, []);
 
   return (
-    <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
-      <Svg width={120} height={120} viewBox="0 0 120 120">
-        <Defs>
-          <RadialGradient id="circleGrad" cx="50%" cy="30%" r="70%">
-            <Stop offset="0%" stopColor="#10B981" />
-            <Stop offset="100%" stopColor="#047857" />
-          </RadialGradient>
-        </Defs>
-
-        {/* Background fill circle */}
-        <Circle cx="60" cy="60" r={CHECK_CIRCLE_R} fill="url(#circleGrad)" />
-
-        {/* Animated stroke ring */}
-        <AnimatedCircle
-          cx="60" cy="60"
-          r={CHECK_CIRCLE_R}
-          fill="none"
-          stroke={WHITE}
-          strokeWidth={3}
-          strokeDasharray={CHECK_DASH_TOTAL}
-          strokeDashoffset={circleProgress}
-          strokeLinecap="round"
-          rotation="-90"
-          origin="60, 60"
-          opacity={0.4}
-        />
-
-        {/* Animated checkmark */}
+    <Animated.View style={[styles.checkCircle, { transform: [{ scale: scaleAnim }] }]}>
+      <Svg width={56} height={56} viewBox="0 0 56 56">
         <AnimatedPath
-          d="M 30 62 L 50 82 L 90 36"
+          d="M 12 29 L 23 40 L 44 16"
           stroke={WHITE}
-          strokeWidth={6.5}
+          strokeWidth={6}
           strokeLinecap="round"
           strokeLinejoin="round"
           fill="none"
@@ -296,17 +182,9 @@ export default function RegistrationSuccess({ navigation, route }: any) {
           <View style={styles.stripDot} />
         </View>
 
-        {/* ── Checkmark + pulse rings ── */}
+        {/* ── Checkmark ── */}
         <View style={styles.checkWrapper}>
-          <PulseRing delay={0}   />
-          <PulseRing delay={500} />
           <CheckmarkCircle />
-          {/* Sparkles */}
-          <View pointerEvents="none" style={StyleSheet.absoluteFillObject}>
-            <View style={styles.sparkleCenter}>
-              {SPARKLES.map((s, i) => <Sparkle key={i} {...s} />)}
-            </View>
-          </View>
         </View>
 
         {/* ── Heading ── */}
@@ -383,20 +261,22 @@ const styles = StyleSheet.create({
 
   // Checkmark area
   checkWrapper: {
-    width: 140,
-    height: 140,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 32,
   },
-  sparkleCenter: {
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    width: 0,
-    height: 0,
+  checkCircle: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: PRIMARY,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: PRIMARY,
+    shadowOpacity: 0.35,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 10,
   },
 
   // Text
