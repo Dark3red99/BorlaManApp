@@ -13,12 +13,17 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-const PRIMARY = '#2B5E2E';
-const BORDER = '#5A9E5E';
-const INPUT_BG = '#F3FAF3';
+const PRIMARY = '#059669';
+const TEXT = '#0F172A';
+const BORDER = '#D3E8DD';
+const INPUT_BG = '#F4FAF7';
 const WHITE = '#FFFFFF';
-const PLACEHOLDER = '#85AD85';
-const GRAY = '#777';
+const PLACEHOLDER = '#93A8A0';
+const GRAY = '#5B6B63';
+const FONT_REGULAR = 'Poppins_400Regular';
+const FONT_MEDIUM = 'Poppins_500Medium';
+const FONT_BOLD = 'Poppins_700Bold';
+const FONT_EXTRABOLD = 'Poppins_800ExtraBold';
 
 type Step = 'phone' | 'otp' | 'reset';
 
@@ -382,7 +387,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#D4EAD4',
+    borderColor: BORDER,
   },
 
   // Step dots
@@ -397,7 +402,7 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#D4EAD4',
+    backgroundColor: BORDER,
   },
   dotActive: {
     width: 24,
@@ -420,21 +425,22 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   heading: {
+    fontFamily: FONT_EXTRABOLD,
     fontSize: 28,
-    fontWeight: '800',
-    color: PRIMARY,
+    color: TEXT,
     marginTop: 20,
     marginBottom: 10,
   },
   subText: {
+    fontFamily: FONT_REGULAR,
     fontSize: 14,
     color: GRAY,
     lineHeight: 21,
     marginBottom: 28,
   },
   phoneHighlight: {
+    fontFamily: FONT_BOLD,
     color: PRIMARY,
-    fontWeight: '700',
   },
 
   // Form
@@ -462,8 +468,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   phonePrefixText: {
+    fontFamily: FONT_BOLD,
     fontSize: 14,
-    fontWeight: '700',
     color: PRIMARY,
   },
   inputPhoneField: {
@@ -481,9 +487,9 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     paddingHorizontal: 22,
     fontSize: 15,
-    color: PRIMARY,
+    color: TEXT,
     backgroundColor: INPUT_BG,
-    fontWeight: '500',
+    fontFamily: FONT_MEDIUM,
   },
   inputWithIcon: {
     paddingRight: 50,
@@ -519,13 +525,13 @@ const styles = StyleSheet.create({
     borderColor: BORDER,
     borderRadius: 14,
     backgroundColor: INPUT_BG,
+    fontFamily: FONT_BOLD,
     fontSize: 22,
-    fontWeight: '700',
-    color: PRIMARY,
+    color: TEXT,
     textAlign: 'center',
   },
   otpBoxFilled: {
-    backgroundColor: '#D6EDD6',
+    backgroundColor: '#D1FAE5',
     borderColor: PRIMARY,
   },
 
@@ -535,17 +541,18 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   resendTimer: {
+    fontFamily: FONT_REGULAR,
     fontSize: 13,
     color: GRAY,
   },
   resendCountdown: {
+    fontFamily: FONT_BOLD,
     color: PRIMARY,
-    fontWeight: '700',
   },
   resendActive: {
+    fontFamily: FONT_BOLD,
     fontSize: 13,
     color: PRIMARY,
-    fontWeight: '700',
     textDecorationLine: 'underline',
   },
 
@@ -567,9 +574,9 @@ const styles = StyleSheet.create({
     opacity: 0.45,
   },
   primaryBtnText: {
+    fontFamily: FONT_BOLD,
     color: WHITE,
     fontSize: 16,
-    fontWeight: '700',
     letterSpacing: 0.3,
   },
 
@@ -581,12 +588,13 @@ const styles = StyleSheet.create({
     paddingBottom: 36,
   },
   footerText: {
+    fontFamily: FONT_REGULAR,
     fontSize: 14,
-    color: '#555',
+    color: '#5B6B63',
   },
   signInLink: {
+    fontFamily: FONT_EXTRABOLD,
     fontSize: 14,
     color: PRIMARY,
-    fontWeight: '800',
   },
 });

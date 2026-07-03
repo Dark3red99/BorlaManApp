@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Leaf } from 'lucide-react-native';
-import { Colors } from '../constants/theme';
+import { Colors, Fonts } from '../constants/theme';
 
 export default function SplashScreen({ navigation }: any) {
   const fade = new Animated.Value(0);
@@ -46,6 +46,6 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.3)',
     marginBottom: 20
   },
-  title: { fontSize: 38, fontWeight: '800', color: '#FFF', letterSpacing: 2 },
-  tagline: { color: 'rgba(255, 255, 255, 0.7)', fontSize: 14, marginTop: 8 }
+  title: { fontFamily: Fonts.extraBold, fontSize: 38, color: '#FFF', letterSpacing: 1 },
+  tagline: { fontFamily: Fonts.medium, color: 'rgba(255, 255, 255, 0.82)', fontSize: 14, marginTop: 8, letterSpacing: 0.3 }
 });

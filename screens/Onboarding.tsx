@@ -14,16 +14,24 @@ const { width, height } = Dimensions.get('window');
 
 // ─── Color Palette ────────────────────────────────────────────────
 const COLORS = {
-  primary: '#1E6B3C',
-  primaryDark: '#144D2B',
-  primaryLight: '#2D8A50',
-  accent: '#4CAF72',
+  primary: '#059669',
+  primaryDark: '#047857',
+  primaryLight: '#10B981',
+  accent: '#F59E0B',
   white: '#FFFFFF',
-  lightGray: '#F5F7F5',
-  textDark: '#1A2E22',
-  textMid: '#4A5E52',
-  textLight: '#8FA898',
-  buttonSecondary: '#D6E8DC',
+  lightGray: '#F6FAF8',
+  textDark: '#0F172A',
+  textMid: '#5B6B63',
+  textLight: '#94A89E',
+  buttonSecondary: '#E3F3EA',
+};
+
+const FONTS = {
+  regular: 'Poppins_400Regular',
+  medium: 'Poppins_500Medium',
+  semiBold: 'Poppins_600SemiBold',
+  bold: 'Poppins_700Bold',
+  extraBold: 'Poppins_800ExtraBold',
 };
 
 // ─── Slide Data ────────────────────────────────────────────────────
@@ -271,18 +279,18 @@ const styles = StyleSheet.create({
     fontSize: 36,
   },
   splashTitle: {
+    fontFamily: FONTS.extraBold,
     fontSize: 36,
-    fontWeight: '800',
     color: COLORS.white,
     letterSpacing: 0.5,
     marginBottom: 8,
   },
   splashSubtitle: {
+    fontFamily: FONTS.medium,
     fontSize: 14,
     color: 'rgba(255,255,255,0.75)',
     letterSpacing: 1.2,
     textTransform: 'uppercase',
-    fontWeight: '500',
   },
   splashDots: {
     flexDirection: 'row',
@@ -334,19 +342,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   slideTitle: {
+    fontFamily: FONTS.extraBold,
     fontSize: 26,
-    fontWeight: '800',
     color: COLORS.textDark,
     marginBottom: 12,
     textAlign: 'center',
     letterSpacing: 0.2,
   },
   slideDescription: {
+    fontFamily: FONTS.regular,
     fontSize: 15,
     color: COLORS.textMid,
     textAlign: 'center',
     lineHeight: 23,
-    fontWeight: '400',
   },
 
   // ── Dots ──
@@ -392,9 +400,9 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   primaryButtonText: {
+    fontFamily: FONTS.bold,
     color: COLORS.white,
     fontSize: 16,
-    fontWeight: '700',
     letterSpacing: 0.3,
   },
   secondaryButton: {
@@ -406,15 +414,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   secondaryButtonText: {
+    fontFamily: FONTS.semiBold,
     color: COLORS.primary,
     fontSize: 16,
-    fontWeight: '600',
     letterSpacing: 0.3,
   },
   skipText: {
+    fontFamily: FONTS.medium,
     fontSize: 14,
     color: COLORS.textLight,
-    fontWeight: '500',
     paddingVertical: 4,
   },
 });

@@ -12,19 +12,12 @@ import {
 } from 'react-native';
 import Svg, { Path, Circle, G, Defs, RadialGradient, Stop } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
-import {
-  useFonts,
-  Poppins_400Regular,
-  Poppins_500Medium,
-  Poppins_600SemiBold,
-  Poppins_700Bold,
-  Poppins_800ExtraBold,
-} from '@expo-google-fonts/poppins';
 
 const { width, height } = Dimensions.get('window');
-const PRIMARY     = '#2B5E2E';
-const MID_GREEN   = '#4A8C4E';
-const LIGHT_GREEN = '#E8F5E9';
+const PRIMARY     = '#059669';
+const MID_GREEN   = '#10B981';
+const LIGHT_GREEN = '#ECFDF5';
+const TEXT        = '#0F172A';
 const WHITE       = '#FFFFFF';
 
 // ─── Animated SVG components ───────────────────────────────────────────
@@ -33,7 +26,7 @@ const AnimatedPath   = Animated.createAnimatedComponent(Path);
 
 // ─── Confetti config ───────────────────────────────────────────────────
 const CONFETTI_COLORS = [
-  '#2B5E2E', '#7CB87A', '#F59E0B',
+  '#059669', '#6EE7B7', '#F59E0B',
   '#60A5FA', '#FDE68A', '#A7F3D0',
   '#FCA5A5', '#C4B5FD',
 ];
@@ -214,8 +207,8 @@ function CheckmarkCircle() {
       <Svg width={120} height={120} viewBox="0 0 120 120">
         <Defs>
           <RadialGradient id="circleGrad" cx="50%" cy="30%" r="70%">
-            <Stop offset="0%" stopColor="#4A8C4E" />
-            <Stop offset="100%" stopColor="#2B5E2E" />
+            <Stop offset="0%" stopColor="#10B981" />
+            <Stop offset="100%" stopColor="#047857" />
           </RadialGradient>
         </Defs>
 
@@ -264,14 +257,6 @@ export default function RegistrationSuccess({ navigation, route }: any) {
   const cardsAnim   = useRef(new Animated.Value(0)).current;
   const btnAnim     = useRef(new Animated.Value(0)).current;
 
-  const [fontsLoaded] = useFonts({
-    Poppins_400Regular,
-    Poppins_500Medium,
-    Poppins_600SemiBold,
-    Poppins_700Bold,
-    Poppins_800ExtraBold,
-  });
-
   useEffect(() => {
     const stagger = (anim: Animated.Value, delay: number) =>
       Animated.timing(anim, {
@@ -292,8 +277,6 @@ export default function RegistrationSuccess({ navigation, route }: any) {
     opacity: anim,
     transform: [{ translateY: anim.interpolate({ inputRange: [0, 1], outputRange: [fromY, 0] }) }],
   });
-
-  if (!fontsLoaded) return <View style={{ flex: 1, backgroundColor: WHITE }} />;
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -395,7 +378,7 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#C8E6C9',
+    backgroundColor: '#A7F3D0',
   },
 
   // Checkmark area
@@ -420,7 +403,7 @@ const styles = StyleSheet.create({
   heading: {
     fontFamily: 'Poppins_800ExtraBold',
     fontSize: 28,
-    color: '#1A1A1A',
+    color: TEXT,
     textAlign: 'center',
     marginBottom: 10,
     lineHeight: 36,
@@ -428,7 +411,7 @@ const styles = StyleSheet.create({
   subHeading: {
     fontFamily: 'Poppins_400Regular',
     fontSize: 15,
-    color: '#666',
+    color: '#5B6B63',
     textAlign: 'center',
     lineHeight: 24,
     marginBottom: 32,
@@ -448,12 +431,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 14,
-    backgroundColor: '#FAFAFA',
+    backgroundColor: LIGHT_GREEN,
     borderRadius: 14,
     paddingHorizontal: 16,
     paddingVertical: 13,
     borderWidth: 1,
-    borderColor: '#EEEEEE',
+    borderColor: '#D7EFE2',
   },
   infoIconBox: {
     width: 38,
@@ -465,7 +448,7 @@ const styles = StyleSheet.create({
   infoText: {
     fontFamily: 'Poppins_500Medium',
     fontSize: 14,
-    color: '#333',
+    color: TEXT,
   },
 
   // Button

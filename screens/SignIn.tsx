@@ -12,11 +12,16 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-const PRIMARY = '#2B5E2E';
-const BORDER = '#5A9E5E';
-const INPUT_BG = '#F3FAF3';
+const PRIMARY = '#059669';
+const TEXT = '#0F172A';
+const BORDER = '#D3E8DD';
+const INPUT_BG = '#F4FAF7';
 const WHITE = '#FFFFFF';
-const PLACEHOLDER = '#85AD85';
+const PLACEHOLDER = '#93A8A0';
+const FONT_REGULAR = 'Poppins_400Regular';
+const FONT_MEDIUM = 'Poppins_500Medium';
+const FONT_BOLD = 'Poppins_700Bold';
+const FONT_EXTRABOLD = 'Poppins_800ExtraBold';
 
 export default function SignIn({ navigation }: any) {
   const [email, setEmail] = useState('');
@@ -130,9 +135,9 @@ const styles = StyleSheet.create({
 
   // Heading
   heading: {
+    fontFamily: FONT_EXTRABOLD,
     fontSize: 30,
-    fontWeight: '800',
-    color: PRIMARY,
+    color: TEXT,
     textAlign: 'center',
     marginBottom: 32,
     marginTop: 24,
@@ -153,9 +158,9 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     paddingHorizontal: 22,
     fontSize: 15,
-    color: PRIMARY,
+    color: TEXT,
     backgroundColor: INPUT_BG,
-    fontWeight: '500',
+    fontFamily: FONT_MEDIUM,
   },
   inputWithIcon: {
     paddingRight: 50,
@@ -183,9 +188,9 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   signInBtnText: {
+    fontFamily: FONT_BOLD,
     color: WHITE,
     fontSize: 16,
-    fontWeight: '700',
     letterSpacing: 0.3,
   },
 
@@ -195,9 +200,9 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   forgotText: {
+    fontFamily: FONT_REGULAR,
     fontSize: 14,
-    color: '#777',
-    fontWeight: '400',
+    color: PLACEHOLDER,
   },
 
   // Footer
@@ -208,13 +213,13 @@ const styles = StyleSheet.create({
     paddingBottom: 36,
   },
   footerText: {
+    fontFamily: FONT_REGULAR,
     fontSize: 14,
-    color: '#555',
-    fontWeight: '400',
+    color: '#5B6B63',
   },
   signUpLink: {
+    fontFamily: FONT_EXTRABOLD,
     fontSize: 14,
     color: PRIMARY,
-    fontWeight: '800',
   },
 });

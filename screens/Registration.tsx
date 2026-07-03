@@ -14,12 +14,19 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Path, G, ClipPath, Defs, Rect } from 'react-native-svg';
 
-const PRIMARY = '#2B5E2E';
-const BORDER = '#5A9E5E';
-const INPUT_BG = '#F3FAF3';
-const GOOGLE_BTN_BG = '#E6F2E6';
+const PRIMARY = '#059669';
+const TEXT = '#0F172A';
+const BORDER = '#D3E8DD';
+const INPUT_BG = '#F4FAF7';
+const GOOGLE_BTN_BG = '#F1F5F3';
+const GOOGLE_TEXT = '#3C4A43';
 const WHITE = '#FFFFFF';
-const PLACEHOLDER = '#85AD85';
+const PLACEHOLDER = '#93A8A0';
+const FONT_REGULAR = 'Poppins_400Regular';
+const FONT_MEDIUM = 'Poppins_500Medium';
+const FONT_SEMIBOLD = 'Poppins_600SemiBold';
+const FONT_BOLD = 'Poppins_700Bold';
+const FONT_EXTRABOLD = 'Poppins_800ExtraBold';
 
 export default function Registration({ navigation }: any) {
   const [fullName, setFullName] = useState('');
@@ -219,9 +226,9 @@ const styles = StyleSheet.create({
 
   // Heading
   heading: {
+    fontFamily: FONT_EXTRABOLD,
     fontSize: 28,
-    fontWeight: '800',
-    color: PRIMARY,
+    color: TEXT,
     textAlign: 'center',
     marginBottom: 36,
     marginTop: 24,
@@ -243,9 +250,9 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     paddingHorizontal: 22,
     fontSize: 15,
-    color: PRIMARY,
+    color: TEXT,
     backgroundColor: INPUT_BG,
-    fontWeight: '500',
+    fontFamily: FONT_MEDIUM,
   },
   inputWithIcon: {
     paddingRight: 50,
@@ -273,9 +280,9 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   continueBtnText: {
+    fontFamily: FONT_BOLD,
     color: WHITE,
     fontSize: 16,
-    fontWeight: '700',
     letterSpacing: 0.3,
   },
 
@@ -288,13 +295,13 @@ const styles = StyleSheet.create({
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: '#C8DEC8',
+    backgroundColor: '#E1EDE6',
   },
   dividerText: {
+    fontFamily: FONT_MEDIUM,
     marginHorizontal: 12,
-    color: '#7A9E7A',
+    color: PLACEHOLDER,
     fontSize: 14,
-    fontWeight: '500',
   },
 
   // Google button
@@ -303,16 +310,16 @@ const styles = StyleSheet.create({
     backgroundColor: GOOGLE_BTN_BG,
     borderRadius: 30,
     borderWidth: 1,
-    borderColor: '#C5DCC5',
+    borderColor: '#E2EAE6',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 12,
   },
   googleBtnText: {
+    fontFamily: FONT_SEMIBOLD,
     fontSize: 15,
-    fontWeight: '700',
-    color: PRIMARY,
+    color: GOOGLE_TEXT,
     letterSpacing: 0.2,
   },
 
@@ -324,13 +331,13 @@ const styles = StyleSheet.create({
     marginTop: 32,
   },
   signinText: {
+    fontFamily: FONT_REGULAR,
     fontSize: 14,
-    color: '#555',
-    fontWeight: '400',
+    color: '#5B6B63',
   },
   signinLink: {
+    fontFamily: FONT_EXTRABOLD,
     fontSize: 14,
     color: PRIMARY,
-    fontWeight: '800',
   },
 });

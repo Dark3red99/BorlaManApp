@@ -10,12 +10,16 @@ import {
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
-const PRIMARY = '#2B5E2E';
+const PRIMARY = '#059669';
+const TEXT = '#0F172A';
 const WHITE = '#FFFFFF';
-const CARD_DEFAULT_BG = '#F5F5F5';
-const CARD_SELECTED_BG = '#D6E8D6';
-const CARD_SELECTED_BORDER = '#2B5E2E';
-const CARD_DEFAULT_BORDER = '#E0E0E0';
+const CARD_DEFAULT_BG = '#FAFCFB';
+const CARD_SELECTED_BG = '#ECFDF5';
+const CARD_SELECTED_BORDER = '#059669';
+const CARD_DEFAULT_BORDER = '#E7EFEA';
+const FONT_MEDIUM = 'Poppins_500Medium';
+const FONT_BOLD = 'Poppins_700Bold';
+const FONT_EXTRABOLD = 'Poppins_800ExtraBold';
 
 type Category = {
   id: string;
@@ -44,7 +48,7 @@ const CATEGORIES: Category[] = [
     id: 'aboboyaa',
     label: 'Aboboyaa',
     description: 'Bottles, jars, broken glass',
-    iconBg: '#0D9488',
+    iconBg: '#0891B2',
     icon: <Ionicons name="car" size={32} color={WHITE} />,
   },
 ];
@@ -135,9 +139,9 @@ const styles = StyleSheet.create({
 
   // Heading
   heading: {
+    fontFamily: FONT_EXTRABOLD,
     fontSize: 28,
-    fontWeight: '800',
-    color: PRIMARY,
+    color: TEXT,
     textAlign: 'center',
     marginBottom: 32,
     marginTop: 24,
@@ -183,14 +187,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   cardLabel: {
+    fontFamily: FONT_BOLD,
     fontSize: 17,
-    fontWeight: '800',
-    color: '#1A1A1A',
+    color: TEXT,
     marginBottom: 4,
   },
   cardDesc: {
+    fontFamily: FONT_MEDIUM,
     fontSize: 13,
-    color: '#777',
+    color: '#5B6B63',
     lineHeight: 18,
   },
 
@@ -200,7 +205,7 @@ const styles = StyleSheet.create({
     height: 28,
     borderRadius: 6,
     borderWidth: 2,
-    borderColor: '#C0C0C0',
+    borderColor: '#C9D9D0',
     backgroundColor: WHITE,
     alignItems: 'center',
     justifyContent: 'center',
@@ -234,9 +239,9 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   continueBtnText: {
+    fontFamily: FONT_BOLD,
     color: WHITE,
     fontSize: 16,
-    fontWeight: '700',
     letterSpacing: 0.3,
   },
 });

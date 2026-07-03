@@ -14,11 +14,15 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-const PRIMARY = '#2B5E2E';
-const BORDER = '#5A9E5E';
-const INPUT_BG = '#F3FAF3';
+const PRIMARY = '#059669';
+const TEXT = '#0F172A';
+const BORDER = '#D3E8DD';
+const INPUT_BG = '#F4FAF7';
 const WHITE = '#FFFFFF';
-const PLACEHOLDER = '#85AD85';
+const PLACEHOLDER = '#93A8A0';
+const FONT_MEDIUM = 'Poppins_500Medium';
+const FONT_BOLD = 'Poppins_700Bold';
+const FONT_EXTRABOLD = 'Poppins_800ExtraBold';
 
 export default function CompleteSignUp({ navigation }: any) {
   const [email, setEmail] = useState('');
@@ -165,9 +169,9 @@ const styles = StyleSheet.create({
 
   // Heading
   heading: {
+    fontFamily: FONT_EXTRABOLD,
     fontSize: 28,
-    fontWeight: '800',
-    color: PRIMARY,
+    color: TEXT,
     textAlign: 'center',
     marginBottom: 32,
     marginTop: 24,
@@ -189,9 +193,9 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     paddingHorizontal: 22,
     fontSize: 15,
-    color: PRIMARY,
+    color: TEXT,
     backgroundColor: INPUT_BG,
-    fontWeight: '500',
+    fontFamily: FONT_MEDIUM,
   },
   inputWithIcon: {
     paddingRight: 52,
@@ -219,9 +223,9 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   submitBtnText: {
+    fontFamily: FONT_BOLD,
     color: WHITE,
     fontSize: 16,
-    fontWeight: '700',
     letterSpacing: 0.3,
   },
 });

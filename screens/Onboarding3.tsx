@@ -39,7 +39,7 @@ const styles = StyleSheet.create({
   illustrationContainer: { flex: 1, justifyContent: 'center' },
   glassIconCard: { width: 180, height: 180, borderRadius: 40, backgroundColor: 'rgba(30, 107, 60, 0.05)', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: 'rgba(30, 107, 60, 0.1)' },
   textContainer: { flex: 0.5, alignItems: 'center' },
-  title: { fontSize: 28, fontWeight: '800', color: Colors.textDark, textAlign: 'center' },
+  title: { fontSize: 28, fontWeight: '800', color: Colors.text, textAlign: 'center' },
   description: { fontSize: 16, color: '#666', textAlign: 'center', marginTop: 15, lineHeight: 24 },
   footer: { width: '100%', paddingBottom: 40, alignItems: 'center' },
   dotsRow: { flexDirection: 'row', gap: 8, marginBottom: 30 },

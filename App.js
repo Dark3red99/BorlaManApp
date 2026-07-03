@@ -1,7 +1,16 @@
 import React from 'react';
+import { View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
+import {
+  useFonts,
+  Poppins_400Regular,
+  Poppins_500Medium,
+  Poppins_600SemiBold,
+  Poppins_700Bold,
+  Poppins_800ExtraBold,
+} from '@expo-google-fonts/poppins';
 
 import SplashScreen from './screens/SplashScreen';
 import Onboarding from './screens/Onboarding';
@@ -12,10 +21,23 @@ import SelectCategory from './screens/SelectCategory';
 import CompleteSignUp from './screens/Completesignup';
 import RegistrationSuccess from './screens/RegistrationSuccess';
 import Dashboard from './screens/Dashboard';
+import { Colors } from './constants/theme';
 
 const Stack = createNativeStackNavigator();
 
 export default function App() {
+  const [fontsLoaded] = useFonts({
+    Poppins_400Regular,
+    Poppins_500Medium,
+    Poppins_600SemiBold,
+    Poppins_700Bold,
+    Poppins_800ExtraBold,
+  });
+
+  if (!fontsLoaded) {
+    return <View style={{ flex: 1, backgroundColor: Colors.primaryDark }} />;
+  }
+
   return (
     <NavigationContainer>
       <Stack.Navigator

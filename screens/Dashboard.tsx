@@ -11,22 +11,16 @@ import {
   Animated,
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
-import {
-  useFonts,
-  Poppins_400Regular,
-  Poppins_500Medium,
-  Poppins_600SemiBold,
-  Poppins_700Bold,
-  Poppins_800ExtraBold,
-} from '@expo-google-fonts/poppins';
 
 const { width } = Dimensions.get('window');
-const PRIMARY       = '#2B5E2E';
-const CARD_GREEN    = '#7A9E72';
-const CARD_GREEN_BG = '#8AAD82';
-const BG            = '#F0F2F0';
-const WHITE         = '#FFFFFF';
-const MUTED         = '#888';
+const PRIMARY    = '#059669';
+const PICKUP_BG  = '#10B981';
+const IMPACT_BG  = '#047857';
+const CARD_SHADOW = '#059669';
+const BG         = '#F3F8F5';
+const WHITE      = '#FFFFFF';
+const TEXT       = '#0F172A';
+const MUTED      = '#64748B';
 
 // ─── Impact data ────────────────────────────────────────────────
 const IMPACT_ITEMS = [
@@ -44,7 +38,7 @@ const ACTIVITY = [
 
 // ─── Bottom tabs ─────────────────────────────────────────────────
 const TABS = [
-  { key: 'Home',      icon: (a: boolean) => <Ionicons name={a ? 'home' : 'home-outline'} size={22} color={a ? PRIMARY : MUTED} /> },
+  { key: 'Home',      icon: (a: boolean) => <MaterialCommunityIcons name={a ? 'home-variant' : 'home-variant-outline'} size={23} color={a ? PRIMARY : MUTED} /> },
   { key: 'Schedule',  icon: (a: boolean) => <Ionicons name={a ? 'calendar' : 'calendar-outline'} size={22} color={a ? PRIMARY : MUTED} /> },
   { key: 'Dispose',   icon: (_: boolean) => <MaterialCommunityIcons name="trash-can" size={26} color={WHITE} />, center: true },
   { key: 'Learn & Earn', icon: (a: boolean) => <Ionicons name={a ? 'school' : 'school-outline'} size={22} color={a ? PRIMARY : MUTED} /> },
@@ -53,18 +47,6 @@ const TABS = [
 
 export default function Dashboard({ navigation }: any) {
   const [activeTab, setActiveTab] = React.useState('Home');
-
-  const [fontsLoaded] = useFonts({
-    Poppins_400Regular,
-    Poppins_500Medium,
-    Poppins_600SemiBold,
-    Poppins_700Bold,
-    Poppins_800ExtraBold,
-  });
-
-  if (!fontsLoaded) return (
-    <View style={{ flex: 1, backgroundColor: BG }} />
-  );
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -82,7 +64,7 @@ export default function Dashboard({ navigation }: any) {
           </View>
           <View style={styles.headerIcons}>
             <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7}>
-              <Ionicons name="notifications-outline" size={22} color="#333" />
+              <Ionicons name="notifications-outline" size={22} color={TEXT} />
             </TouchableOpacity>
             <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7}>
               <Ionicons name="person-circle-outline" size={26} color={PRIMARY} />
@@ -110,7 +92,7 @@ export default function Dashboard({ navigation }: any) {
             </View>
 
             <TouchableOpacity style={styles.arrowBtn} activeOpacity={0.8}>
-              <Ionicons name="chevron-forward" size={20} color="#333" />
+              <Ionicons name="chevron-forward" size={20} color={TEXT} />
             </TouchableOpacity>
           </View>
         </View>
@@ -241,7 +223,7 @@ const styles = StyleSheet.create({
   welcomeText: {
     fontFamily: 'Poppins_800ExtraBold',
     fontSize: 26,
-    color: '#1A1A1A',
+    color: TEXT,
     lineHeight: 34,
   },
   userName: {
@@ -271,11 +253,11 @@ const styles = StyleSheet.create({
 
   // ── Next Pickup Card ──
   pickupCard: {
-    backgroundColor: CARD_GREEN_BG,
+    backgroundColor: PICKUP_BG,
     borderRadius: 20,
     padding: 18,
     marginBottom: 16,
-    shadowColor: CARD_GREEN,
+    shadowColor: CARD_SHADOW,
     shadowOpacity: 0.3,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
@@ -371,18 +353,18 @@ const styles = StyleSheet.create({
   quickLabel: {
     fontFamily: 'Poppins_600SemiBold',
     fontSize: 13,
-    color: '#1A1A1A',
+    color: TEXT,
     textAlign: 'center',
     lineHeight: 19,
   },
 
   // ── Impact Tracker ──
   impactCard: {
-    backgroundColor: '#7A9A72',
+    backgroundColor: IMPACT_BG,
     borderRadius: 20,
     padding: 18,
     marginBottom: 16,
-    shadowColor: CARD_GREEN,
+    shadowColor: CARD_SHADOW,
     shadowOpacity: 0.25,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 3 },
@@ -466,7 +448,7 @@ const styles = StyleSheet.create({
   activityTitle: {
     fontFamily: 'Poppins_700Bold',
     fontSize: 16,
-    color: '#1A1A1A',
+    color: TEXT,
     marginBottom: 14,
   },
   activityRow: {
@@ -492,7 +474,7 @@ const styles = StyleSheet.create({
   activityItemTitle: {
     fontFamily: 'Poppins_600SemiBold',
     fontSize: 14,
-    color: '#1A1A1A',
+    color: TEXT,
     marginBottom: 2,
   },
   activityItemSub: {

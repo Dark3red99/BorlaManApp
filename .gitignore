@@ -39,3 +39,6 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# Claude Code third-party skills (vendored tooling, not project source)
+.claude/skills/ui-ux-pro-max/
