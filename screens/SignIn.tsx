@@ -40,12 +40,6 @@ export default function SignIn({ navigation }: any) {
       >
         {/* Center content */}
         <View style={styles.center}>
-          {/* Brand */}
-          <View style={styles.brandRow}>
-            <Ionicons name="trash-outline" size={52} color={PRIMARY} />
-            <Text style={styles.brandName}>BorlaMan</Text>
-          </View>
-
           {/* Heading */}
           <Text style={styles.heading}>Welcome back</Text>
 
@@ -134,19 +128,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 28,
   },
 
-  // Brand
-  brandRow: {
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  brandName: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: PRIMARY,
-    marginTop: 6,
-    letterSpacing: 0.3,
-  },
-
   // Heading
   heading: {
     fontSize: 30,
@@ -154,7 +135,7 @@ const styles = StyleSheet.create({
     color: PRIMARY,
     textAlign: 'center',
     marginBottom: 32,
-    marginTop: 2,
+    marginTop: 24,
   },
 
   // Form

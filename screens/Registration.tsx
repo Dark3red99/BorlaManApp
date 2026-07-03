@@ -49,12 +49,6 @@ export default function Registration({ navigation }: any) {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {/* Logo + Brand */}
-          <View style={styles.brandRow}>
-            <Ionicons name="trash-outline" size={52} color={PRIMARY} />
-            <Text style={styles.brandName}>BorlaMan</Text>
-          </View>
-
           {/* Heading */}
           <Text style={styles.heading}>Create your account</Text>
 
@@ -223,19 +217,6 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
   },
 
-  // Brand
-  brandRow: {
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  brandName: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: PRIMARY,
-    marginTop: 6,
-    letterSpacing: 0.3,
-  },
-
   // Heading
   heading: {
     fontSize: 28,
@@ -243,7 +224,7 @@ const styles = StyleSheet.create({
     color: PRIMARY,
     textAlign: 'center',
     marginBottom: 36,
-    marginTop: 4,
+    marginTop: 24,
     lineHeight: 36,
   },
 

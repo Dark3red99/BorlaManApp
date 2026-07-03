@@ -313,12 +313,6 @@ export default function RegistrationSuccess({ navigation, route }: any) {
           <View style={styles.stripDot} />
         </View>
 
-        {/* ── Brand logo ── */}
-        <Animated.View style={[styles.brandRow, fadeSlide(logoAnim, 20)]}>
-          <Ionicons name="trash-outline" size={28} color={PRIMARY} />
-          <Text style={styles.brandName}>BorlaMan</Text>
-        </Animated.View>
-
         {/* ── Checkmark + pulse rings ── */}
         <View style={styles.checkWrapper}>
           <PulseRing delay={0}   />
@@ -402,20 +396,6 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
     backgroundColor: '#C8E6C9',
-  },
-
-  // Brand
-  brandRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 36,
-  },
-  brandName: {
-    fontFamily: 'Poppins_800ExtraBold',
-    fontSize: 18,
-    color: PRIMARY,
-    letterSpacing: 0.3,
   },
 
   // Checkmark area

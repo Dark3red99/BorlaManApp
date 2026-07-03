@@ -182,12 +182,6 @@ export default function ForgotPassword({ navigation }: any) {
             { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
           ]}
         >
-          {/* Brand */}
-          <View style={styles.brandRow}>
-            <Ionicons name="trash-outline" size={48} color={PRIMARY} />
-            <Text style={styles.brandName}>BorlaMan</Text>
-          </View>
-
           {/* ─── STEP 1: Phone ─── */}
           {step === 'phone' && (
             <View style={styles.stepBlock}>
@@ -421,19 +415,6 @@ const styles = StyleSheet.create({
     paddingTop: 16,
   },
 
-  // Brand
-  brandRow: {
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  brandName: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: PRIMARY,
-    marginTop: 4,
-    letterSpacing: 0.3,
-  },
-
   // Step block
   stepBlock: {
     flex: 1,
@@ -442,6 +423,7 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: '800',
     color: PRIMARY,
+    marginTop: 20,
     marginBottom: 10,
   },
   subText: {
