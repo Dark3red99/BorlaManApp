@@ -5,16 +5,21 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  SafeAreaView,
   KeyboardAvoidingView,
   Platform,
   StatusBar,
+  ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import type { RootStackScreenProps } from '../types/navigation';
+import { useAuth } from '../context/AuthContext';
+import { AuthError } from '../services/authService';
 
 const PRIMARY = '#059669';
 const TEXT = '#0F172A';
 const BORDER = '#D3E8DD';
+const ERROR = '#E53935';
 const INPUT_BG = '#F4FAF7';
 const WHITE = '#FFFFFF';
 const PLACEHOLDER = '#93A8A0';
@@ -23,17 +28,37 @@ const FONT_MEDIUM = 'Poppins_500Medium';
 const FONT_BOLD = 'Poppins_700Bold';
 const FONT_EXTRABOLD = 'Poppins_800ExtraBold';
 
-export default function SignIn({ navigation }: any) {
-  const [email, setEmail] = useState('');
+export default function SignIn({ navigation }: RootStackScreenProps<'SignIn'>) {
+  const { signIn } = useAuth();
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSignIn = () => {
-    // Handle sign in logic here
+  const canSubmit = identifier.trim().length > 0 && password.length > 0 && !submitting;
+
+  const handleSignIn = async () => {
+    if (!canSubmit) return;
+    setError(null);
+    setSubmitting(true);
+    try {
+      await signIn(identifier, password);
+      // Reset (not replace) so signup/onboarding screens can't be reached via back.
+      navigation.reset({ index: 0, routes: [{ name: 'Dashboard' }] });
+    } catch (e) {
+      setError(
+        e instanceof AuthError
+          ? e.message
+          : 'Something went wrong. Please try again.',
+      );
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleForgotPassword = () => {
-    navigation?.navigate('ForgotPassword');
+    navigation.navigate('ForgotPassword');
   };
 
   return (
@@ -50,16 +75,18 @@ export default function SignIn({ navigation }: any) {
 
           {/* Form */}
           <View style={styles.form}>
-            {/* Email */}
+            {/* Email or Phone */}
             <View style={styles.inputWrapper}>
               <TextInput
                 style={styles.input}
-                placeholder="Email"
+                placeholder="Email or phone number"
                 placeholderTextColor={PLACEHOLDER}
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
+                value={identifier}
+                onChangeText={(v) => { setIdentifier(v); setError(null); }}
                 autoCapitalize="none"
+                autoCorrect={false}
+                textContentType="username"
+                autoComplete="username"
                 returnKeyType="next"
               />
             </View>
@@ -71,9 +98,12 @@ export default function SignIn({ navigation }: any) {
                 placeholder="Password"
                 placeholderTextColor={PLACEHOLDER}
                 value={password}
-                onChangeText={setPassword}
+                onChangeText={(v) => { setPassword(v); setError(null); }}
                 secureTextEntry={!showPassword}
+                textContentType="password"
+                autoComplete="current-password"
                 returnKeyType="done"
+                onSubmitEditing={handleSignIn}
               />
               <TouchableOpacity
                 style={styles.eyeIcon}
@@ -88,13 +118,21 @@ export default function SignIn({ navigation }: any) {
               </TouchableOpacity>
             </View>
 
+            {/* Error */}
+            {error && <Text style={styles.errorText}>{error}</Text>}
+
             {/* Sign In Button */}
             <TouchableOpacity
-              style={styles.signInBtn}
+              style={[styles.signInBtn, !canSubmit && styles.signInBtnDisabled]}
               onPress={handleSignIn}
               activeOpacity={0.85}
+              disabled={!canSubmit}
             >
-              <Text style={styles.signInBtnText}>Sign In</Text>
+              {submitting ? (
+                <ActivityIndicator color={WHITE} />
+              ) : (
+                <Text style={styles.signInBtnText}>Sign In</Text>
+              )}
             </TouchableOpacity>
 
             {/* Forgot Password */}
@@ -173,6 +211,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
 
+  // Error
+  errorText: {
+    fontFamily: FONT_REGULAR,
+    color: ERROR,
+    fontSize: 13,
+    textAlign: 'center',
+    marginTop: -4,
+  },
+
   // Sign In button
   signInBtn: {
     height: 58,
@@ -186,6 +233,9 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
     elevation: 6,
+  },
+  signInBtnDisabled: {
+    opacity: 0.6,
   },
   signInBtnText: {
     fontFamily: FONT_BOLD,

@@ -1,5 +1,6 @@
 import React from 'react';
-import { ScrollView, StyleSheet, SafeAreaView, StatusBar } from 'react-native';
+import { ScrollView, StyleSheet, StatusBar } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import ScheduleTab from '../../components/ScheduleTab';
 
 const BG    = '#F3F8F5';
@@ -7,7 +8,7 @@ const WHITE = '#FFFFFF';
 
 export default function ScheduleScreen() {
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
       <StatusBar barStyle="dark-content" backgroundColor={WHITE} />
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <ScheduleTab />
@@ -20,7 +21,6 @@ const styles = StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: BG,
-    marginTop: StatusBar.currentHeight || 0,
   },
   scroll: {
     flexGrow: 1,

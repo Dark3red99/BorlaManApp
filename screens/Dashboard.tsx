@@ -1,11 +1,13 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { createBottomTabNavigator, BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
 import HomeScreen from './dashboard/HomeScreen';
 import ScheduleScreen from './dashboard/ScheduleScreen';
 import ComingSoonScreen from './dashboard/ComingSoonScreen';
+import ProfileScreen from './dashboard/ProfileScreen';
 
 const PRIMARY = '#059669';
 const WHITE   = '#FFFFFF';
@@ -42,8 +44,10 @@ const TAB_META: Record<string, TabMeta> = {
 };
 
 function CustomTabBar({ state, navigation }: BottomTabBarProps) {
+  const insets = useSafeAreaInsets();
+
   return (
-    <View style={styles.tabBar}>
+    <View style={[styles.tabBar, { paddingBottom: Math.max(insets.bottom, 10) }]}>
       {state.routes.map((route, index) => {
         const meta = TAB_META[route.name];
         const isFocused = state.index === index;
@@ -88,7 +92,7 @@ export default function Dashboard() {
       <Tab.Screen name="Schedule" component={ScheduleScreen} />
       <Tab.Screen name="Dispose" component={ComingSoonScreen} />
       <Tab.Screen name="LearnEarn" component={ComingSoonScreen} />
-      <Tab.Screen name="Profile" component={ComingSoonScreen} />
+      <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );
 }
@@ -99,7 +103,6 @@ const styles = StyleSheet.create({
     backgroundColor: WHITE,
     borderTopWidth: 1,
     borderTopColor: '#EBEBEB',
-    paddingBottom: Platform.OS === 'ios' ? 20 : 10,
     paddingTop: 8,
     alignItems: 'center',
     shadowColor: '#000',

@@ -3,7 +3,9 @@
     "allow": [
       "Bash(xargs -I{} sh -c 'echo {}; cat {}/package.json 2>/dev/null | grep \"\\\\\"version\\\\\"\"')",
       "Bash(xargs grep -l \"id\")",
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "PowerShell(npx tsc --noEmit 2>$null)",
+      "PowerShell(if \\($?\\) { \"TYPECHECK PASSED\" } else { \"TYPECHECK FAILED\" })"
     ]
   }
 }

@@ -5,10 +5,11 @@ import {
   ScrollView,
   TouchableOpacity,
   StyleSheet,
-  SafeAreaView,
   StatusBar,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
+import { useAuth } from '../../context/AuthContext';
 
 const PRIMARY     = '#059669';
 const PICKUP_BG   = '#10B981';
@@ -34,8 +35,10 @@ const ACTIVITY = [
 ];
 
 export default function HomeScreen({ navigation }: any) {
+  const { user } = useAuth();
+
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
       <StatusBar barStyle="dark-content" backgroundColor={BG} />
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
@@ -43,7 +46,7 @@ export default function HomeScreen({ navigation }: any) {
         <View style={styles.header}>
           <View>
             <Text style={styles.welcomeText}>Welcome 👋</Text>
-            <Text style={styles.userName}>Abena Dedei</Text>
+            <Text style={styles.userName}>{user?.fullName ?? 'there'}</Text>
           </View>
           <View style={styles.headerIcons}>
             <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7}>
@@ -154,7 +157,6 @@ const styles = StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: BG,
-    marginTop: StatusBar.currentHeight || 0,
   },
   scroll: {
     paddingHorizontal: 20,

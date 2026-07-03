@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, SafeAreaView, StatusBar } from 'react-native';
+import { View, Text, StyleSheet, StatusBar } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
 const PRIMARY = '#059669';
@@ -18,7 +19,7 @@ export default function ComingSoonScreen({ route }: any) {
   const label = LABELS[route?.name] ?? route?.name ?? '';
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
       <StatusBar barStyle="dark-content" backgroundColor={BG} />
       <View style={styles.container}>
         <View style={styles.iconBox}>
@@ -35,7 +36,6 @@ const styles = StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: BG,
-    marginTop: StatusBar.currentHeight || 0,
   },
   container: {
     flex: 1,

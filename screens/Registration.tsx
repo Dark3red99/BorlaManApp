@@ -5,18 +5,27 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   KeyboardAvoidingView,
   Platform,
   StatusBar,
+  Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Path, G, ClipPath, Defs, Rect } from 'react-native-svg';
+import type { RootStackScreenProps } from '../types/navigation';
+import {
+  validateFullName,
+  validatePhone,
+  validatePassword,
+  validateConfirmPassword,
+} from '../utils/validation';
 
 const PRIMARY = '#059669';
 const TEXT = '#0F172A';
 const BORDER = '#D3E8DD';
+const ERROR = '#E53935';
 const INPUT_BG = '#F4FAF7';
 const GOOGLE_BTN_BG = '#F1F5F3';
 const GOOGLE_TEXT = '#3C4A43';
@@ -28,20 +37,37 @@ const FONT_SEMIBOLD = 'Poppins_600SemiBold';
 const FONT_BOLD = 'Poppins_700Bold';
 const FONT_EXTRABOLD = 'Poppins_800ExtraBold';
 
-export default function Registration({ navigation }: any) {
+type Errors = Partial<Record<'fullName' | 'phone' | 'password' | 'confirmPassword', string>>;
+
+export default function Registration({ navigation }: RootStackScreenProps<'Registration'>) {
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [errors, setErrors] = useState<Errors>({});
 
   const handleContinue = () => {
-    navigation.navigate('SelectCategory');
+    const next: Errors = {
+      fullName: validateFullName(fullName) ?? undefined,
+      phone: validatePhone(phone) ?? undefined,
+      password: validatePassword(password) ?? undefined,
+      confirmPassword: validateConfirmPassword(password, confirmPassword) ?? undefined,
+    };
+    setErrors(next);
+    if (Object.values(next).some(Boolean)) return;
+
+    navigation.navigate('SelectCategory', {
+      draft: { fullName: fullName.trim(), phone: phone.trim(), password },
+    });
   };
 
+  const clearError = (field: keyof Errors) =>
+    setErrors((prev) => (prev[field] ? { ...prev, [field]: undefined } : prev));
+
   const handleGoogleSignIn = () => {
-    // Handle Google sign-in logic here
+    Alert.alert('Google Sign-In', 'Google sign-in will be available once the backend is connected.');
   };
 
   return (
@@ -62,77 +88,98 @@ export default function Registration({ navigation }: any) {
           {/* Form */}
           <View style={styles.form}>
             {/* Full Name */}
-            <View style={styles.inputWrapper}>
-              <TextInput
-                style={styles.input}
-                placeholder="Full name"
-                placeholderTextColor={PLACEHOLDER}
-                value={fullName}
-                onChangeText={setFullName}
-                autoCapitalize="words"
-                returnKeyType="next"
-              />
+            <View>
+              <View style={styles.inputWrapper}>
+                <TextInput
+                  style={[styles.input, errors.fullName ? styles.inputError : null]}
+                  placeholder="Full name"
+                  placeholderTextColor={PLACEHOLDER}
+                  value={fullName}
+                  onChangeText={(v) => { setFullName(v); clearError('fullName'); }}
+                  autoCapitalize="words"
+                  textContentType="name"
+                  autoComplete="name"
+                  returnKeyType="next"
+                />
+              </View>
+              {errors.fullName && <Text style={styles.errorText}>{errors.fullName}</Text>}
             </View>
 
             {/* Phone Number */}
-            <View style={styles.inputWrapper}>
-              <TextInput
-                style={styles.input}
-                placeholder="Phone Number"
-                placeholderTextColor={PLACEHOLDER}
-                value={phone}
-                onChangeText={setPhone}
-                keyboardType="phone-pad"
-                returnKeyType="next"
-              />
+            <View>
+              <View style={styles.inputWrapper}>
+                <TextInput
+                  style={[styles.input, errors.phone ? styles.inputError : null]}
+                  placeholder="Phone Number"
+                  placeholderTextColor={PLACEHOLDER}
+                  value={phone}
+                  onChangeText={(v) => { setPhone(v); clearError('phone'); }}
+                  keyboardType="phone-pad"
+                  textContentType="telephoneNumber"
+                  autoComplete="tel"
+                  returnKeyType="next"
+                />
+              </View>
+              {errors.phone && <Text style={styles.errorText}>{errors.phone}</Text>}
             </View>
 
             {/* Password */}
-            <View style={styles.inputWrapper}>
-              <TextInput
-                style={[styles.input, styles.inputWithIcon]}
-                placeholder="Password"
-                placeholderTextColor={PLACEHOLDER}
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry={!showPassword}
-                returnKeyType="next"
-              />
-              <TouchableOpacity
-                style={styles.eyeIcon}
-                onPress={() => setShowPassword(!showPassword)}
-                activeOpacity={0.7}
-              >
-                <Ionicons
-                  name={showPassword ? 'eye-outline' : 'eye-off-outline'}
-                  size={20}
-                  color={PLACEHOLDER}
+            <View>
+              <View style={styles.inputWrapper}>
+                <TextInput
+                  style={[styles.input, styles.inputWithIcon, errors.password ? styles.inputError : null]}
+                  placeholder="Password"
+                  placeholderTextColor={PLACEHOLDER}
+                  value={password}
+                  onChangeText={(v) => { setPassword(v); clearError('password'); }}
+                  secureTextEntry={!showPassword}
+                  textContentType="newPassword"
+                  autoComplete="new-password"
+                  returnKeyType="next"
                 />
-              </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.eyeIcon}
+                  onPress={() => setShowPassword(!showPassword)}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons
+                    name={showPassword ? 'eye-outline' : 'eye-off-outline'}
+                    size={20}
+                    color={PLACEHOLDER}
+                  />
+                </TouchableOpacity>
+              </View>
+              {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
             </View>
 
             {/* Confirm Password */}
-            <View style={styles.inputWrapper}>
-              <TextInput
-                style={[styles.input, styles.inputWithIcon]}
-                placeholder="Confirm Password"
-                placeholderTextColor={PLACEHOLDER}
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
-                secureTextEntry={!showConfirm}
-                returnKeyType="done"
-              />
-              <TouchableOpacity
-                style={styles.eyeIcon}
-                onPress={() => setShowConfirm(!showConfirm)}
-                activeOpacity={0.7}
-              >
-                <Ionicons
-                  name={showConfirm ? 'eye-outline' : 'eye-off-outline'}
-                  size={20}
-                  color={PLACEHOLDER}
+            <View>
+              <View style={styles.inputWrapper}>
+                <TextInput
+                  style={[styles.input, styles.inputWithIcon, errors.confirmPassword ? styles.inputError : null]}
+                  placeholder="Confirm Password"
+                  placeholderTextColor={PLACEHOLDER}
+                  value={confirmPassword}
+                  onChangeText={(v) => { setConfirmPassword(v); clearError('confirmPassword'); }}
+                  secureTextEntry={!showConfirm}
+                  textContentType="newPassword"
+                  autoComplete="new-password"
+                  returnKeyType="done"
+                  onSubmitEditing={handleContinue}
                 />
-              </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.eyeIcon}
+                  onPress={() => setShowConfirm(!showConfirm)}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons
+                    name={showConfirm ? 'eye-outline' : 'eye-off-outline'}
+                    size={20}
+                    color={PLACEHOLDER}
+                  />
+                </TouchableOpacity>
+              </View>
+              {errors.confirmPassword && <Text style={styles.errorText}>{errors.confirmPassword}</Text>}
             </View>
 
             {/* Continue Button */}
@@ -165,7 +212,7 @@ export default function Registration({ navigation }: any) {
           {/* Sign In Link */}
           <View style={styles.signinRow}>
             <Text style={styles.signinText}>Already have an account? </Text>
-            <TouchableOpacity onPress={() => navigation?.navigate('SignIn')}>
+            <TouchableOpacity onPress={() => navigation.navigate('SignIn')}>
               <Text style={styles.signinLink}>Sign In</Text>
             </TouchableOpacity>
           </View>
@@ -256,6 +303,16 @@ const styles = StyleSheet.create({
   },
   inputWithIcon: {
     paddingRight: 50,
+  },
+  inputError: {
+    borderColor: ERROR,
+  },
+  errorText: {
+    fontFamily: FONT_REGULAR,
+    color: ERROR,
+    fontSize: 12,
+    marginTop: 5,
+    marginLeft: 14,
   },
   eyeIcon: {
     position: 'absolute',

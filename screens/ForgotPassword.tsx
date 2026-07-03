@@ -5,13 +5,17 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  SafeAreaView,
   KeyboardAvoidingView,
   Platform,
   StatusBar,
   Animated,
+  Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import type { RootStackScreenProps } from '../types/navigation';
+import { resetPassword, AuthError } from '../services/authService';
+import { validatePassword } from '../utils/validation';
 
 const PRIMARY = '#059669';
 const TEXT = '#0F172A';
@@ -29,7 +33,7 @@ type Step = 'phone' | 'otp' | 'reset';
 
 const OTP_LENGTH = 6;
 
-export default function ForgotPassword({ navigation }: any) {
+export default function ForgotPassword({ navigation }: RootStackScreenProps<'ForgotPassword'>) {
   const [step, setStep] = useState<Step>('phone');
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(''));
@@ -144,10 +148,24 @@ export default function ForgotPassword({ navigation }: any) {
     animateToNext('reset');
   };
 
-  const handleResetPassword = () => {
-    if (!newPassword || newPassword !== confirmPassword) return;
-    // TODO: call your reset password API here
-    navigation?.navigate('SignIn');
+  const handleResetPassword = async () => {
+    const pwError = validatePassword(newPassword);
+    if (pwError) {
+      Alert.alert('Weak Password', pwError);
+      return;
+    }
+    if (newPassword !== confirmPassword) return;
+    try {
+      await resetPassword(phone, newPassword);
+      Alert.alert('Password Reset', 'Your password has been updated. Sign in with your new password.', [
+        { text: 'Sign In', onPress: () => navigation.navigate('SignIn') },
+      ]);
+    } catch (e) {
+      Alert.alert(
+        'Reset Failed',
+        e instanceof AuthError ? e.message : 'Something went wrong. Please try again.',
+      );
+    }
   };
 
   const handleBack = () => {

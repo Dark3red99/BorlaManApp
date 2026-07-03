@@ -1,11 +1,17 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Leaf } from 'lucide-react-native';
 import { Colors, Fonts } from '../constants/theme';
+import type { RootStackScreenProps } from '../types/navigation';
+import { useAuth } from '../context/AuthContext';
 
-export default function SplashScreen({ navigation }: any) {
-  const fade = new Animated.Value(0);
+const MIN_SPLASH_MS = 2500;
+
+export default function SplashScreen({ navigation }: RootStackScreenProps<'Splash'>) {
+  const fade = useRef(new Animated.Value(0)).current;
+  const mountedAt = useRef(Date.now());
+  const { user, initializing } = useAuth();
 
   useEffect(() => {
     Animated.timing(fade, {
@@ -13,10 +19,20 @@ export default function SplashScreen({ navigation }: any) {
       duration: 1500,
       useNativeDriver: true,
     }).start();
-
-    // Auto-navigate to Onboarding after 3s
-    setTimeout(() => navigation.replace('Onboarding'), 3000);
   }, []);
+
+  // Once the persisted session is restored, route past the splash:
+  // returning users go straight to the Dashboard, new ones to Onboarding.
+  // The brand delay runs from mount so it overlaps (not stacks on) the restore.
+  useEffect(() => {
+    if (initializing) return;
+    const remaining = Math.max(0, MIN_SPLASH_MS - (Date.now() - mountedAt.current));
+    const timer = setTimeout(
+      () => navigation.replace(user ? 'Dashboard' : 'Onboarding'),
+      remaining,
+    );
+    return () => clearTimeout(timer);
+  }, [initializing, user, navigation]);
 
   return (
     <View style={styles.container}>

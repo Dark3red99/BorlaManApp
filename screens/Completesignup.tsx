@@ -5,40 +5,101 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   KeyboardAvoidingView,
   Platform,
   StatusBar,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import type { RootStackScreenProps } from '../types/navigation';
+import { useAuth } from '../context/AuthContext';
+import { AuthError } from '../services/authService';
+import { validateEmail, validateRequired } from '../utils/validation';
 
 const PRIMARY = '#059669';
 const TEXT = '#0F172A';
 const BORDER = '#D3E8DD';
+const ERROR = '#E53935';
 const INPUT_BG = '#F4FAF7';
 const WHITE = '#FFFFFF';
 const PLACEHOLDER = '#93A8A0';
+const FONT_REGULAR = 'Poppins_400Regular';
 const FONT_MEDIUM = 'Poppins_500Medium';
 const FONT_BOLD = 'Poppins_700Bold';
 const FONT_EXTRABOLD = 'Poppins_800ExtraBold';
 
-export default function CompleteSignUp({ navigation }: any) {
+type Errors = Partial<Record<'email' | 'region' | 'district' | 'address' | 'area', string>>;
+
+export default function CompleteSignUp({ navigation, route }: RootStackScreenProps<'CompleteSignUp'>) {
+  const { draft, category } = route.params;
+  const { register } = useAuth();
+
   const [email, setEmail] = useState('');
   const [region, setRegion] = useState('');
   const [district, setDistrict] = useState('');
   const [address, setAddress] = useState('');
   const [area, setArea] = useState('');
   const [gps, setGps] = useState('');
+  const [errors, setErrors] = useState<Errors>({});
+  const [submitting, setSubmitting] = useState(false);
 
   const handleGPS = () => {
-    // Hook into expo-location here
-    Alert.alert('GPS', 'Fetching your location...');
+    // Hook into expo-location here (Phase 2, with the map picker)
+    Alert.alert('GPS', 'GPS capture is coming with the map in the next phase.');
   };
 
-  const handleSubmit = () => {
-    navigation?.replace('RegistrationSuccess', { name: 'Abena Dedei' });
+  const clearError = (field: keyof Errors) =>
+    setErrors((prev) => (prev[field] ? { ...prev, [field]: undefined } : prev));
+
+  const handleSubmit = async () => {
+    const next: Errors = {
+      email: validateEmail(email) ?? undefined,
+      region: validateRequired(region, 'region') ?? undefined,
+      district: validateRequired(district, 'district') ?? undefined,
+      address: validateRequired(address, 'address') ?? undefined,
+      area: validateRequired(area, 'area or neighborhood') ?? undefined,
+    };
+    setErrors(next);
+    if (Object.values(next).some(Boolean)) return;
+
+    setSubmitting(true);
+    try {
+      const user = await register({
+        fullName: draft.fullName,
+        phone: draft.phone,
+        password: draft.password,
+        email,
+        category,
+        address: {
+          region: region.trim(),
+          district: district.trim(),
+          addressLine: address.trim(),
+          area: area.trim(),
+          gpsText: gps || undefined,
+        },
+      });
+      // Reset so the signup screens (with the stale draft) can't be reached via back.
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'RegistrationSuccess', params: { name: user.fullName } }],
+      });
+    } catch (e) {
+      if (e instanceof AuthError && e.code === 'email-taken') {
+        setErrors((prev) => ({ ...prev, email: e.message }));
+      } else if (e instanceof AuthError) {
+        Alert.alert('Sign Up Failed', e.message, [
+          { text: 'Sign In Instead', onPress: () => navigation.navigate('SignIn') },
+          { text: 'OK' },
+        ]);
+      } else {
+        Alert.alert('Sign Up Failed', 'Something went wrong. Please try again.');
+      }
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -59,65 +120,84 @@ export default function CompleteSignUp({ navigation }: any) {
           {/* Form */}
           <View style={styles.form}>
             {/* Email */}
-            <View style={styles.inputWrapper}>
-              <TextInput
-                style={styles.input}
-                placeholder="Email address"
-                placeholderTextColor={PLACEHOLDER}
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                returnKeyType="next"
-              />
+            <View>
+              <View style={styles.inputWrapper}>
+                <TextInput
+                  style={[styles.input, errors.email ? styles.inputError : null]}
+                  placeholder="Email address"
+                  placeholderTextColor={PLACEHOLDER}
+                  value={email}
+                  onChangeText={(v) => { setEmail(v); clearError('email'); }}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  textContentType="emailAddress"
+                  autoComplete="email"
+                  returnKeyType="next"
+                />
+              </View>
+              {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
             </View>
 
             {/* Region */}
-            <View style={styles.inputWrapper}>
-              <TextInput
-                style={styles.input}
-                placeholder="Region"
-                placeholderTextColor={PLACEHOLDER}
-                value={region}
-                onChangeText={setRegion}
-                returnKeyType="next"
-              />
+            <View>
+              <View style={styles.inputWrapper}>
+                <TextInput
+                  style={[styles.input, errors.region ? styles.inputError : null]}
+                  placeholder="Region"
+                  placeholderTextColor={PLACEHOLDER}
+                  value={region}
+                  onChangeText={(v) => { setRegion(v); clearError('region'); }}
+                  returnKeyType="next"
+                />
+              </View>
+              {errors.region && <Text style={styles.errorText}>{errors.region}</Text>}
             </View>
 
             {/* District */}
-            <View style={styles.inputWrapper}>
-              <TextInput
-                style={styles.input}
-                placeholder="District"
-                placeholderTextColor={PLACEHOLDER}
-                value={district}
-                onChangeText={setDistrict}
-                returnKeyType="next"
-              />
+            <View>
+              <View style={styles.inputWrapper}>
+                <TextInput
+                  style={[styles.input, errors.district ? styles.inputError : null]}
+                  placeholder="District"
+                  placeholderTextColor={PLACEHOLDER}
+                  value={district}
+                  onChangeText={(v) => { setDistrict(v); clearError('district'); }}
+                  returnKeyType="next"
+                />
+              </View>
+              {errors.district && <Text style={styles.errorText}>{errors.district}</Text>}
             </View>
 
             {/* Address / House No. */}
-            <View style={styles.inputWrapper}>
-              <TextInput
-                style={styles.input}
-                placeholder="Address /House No."
-                placeholderTextColor={PLACEHOLDER}
-                value={address}
-                onChangeText={setAddress}
-                returnKeyType="next"
-              />
+            <View>
+              <View style={styles.inputWrapper}>
+                <TextInput
+                  style={[styles.input, errors.address ? styles.inputError : null]}
+                  placeholder="Address /House No."
+                  placeholderTextColor={PLACEHOLDER}
+                  value={address}
+                  onChangeText={(v) => { setAddress(v); clearError('address'); }}
+                  textContentType="fullStreetAddress"
+                  autoComplete="street-address"
+                  returnKeyType="next"
+                />
+              </View>
+              {errors.address && <Text style={styles.errorText}>{errors.address}</Text>}
             </View>
 
             {/* Area / Neighborhood */}
-            <View style={styles.inputWrapper}>
-              <TextInput
-                style={styles.input}
-                placeholder="Area/Neighborhood"
-                placeholderTextColor={PLACEHOLDER}
-                value={area}
-                onChangeText={setArea}
-                returnKeyType="next"
-              />
+            <View>
+              <View style={styles.inputWrapper}>
+                <TextInput
+                  style={[styles.input, errors.area ? styles.inputError : null]}
+                  placeholder="Area/Neighborhood"
+                  placeholderTextColor={PLACEHOLDER}
+                  value={area}
+                  onChangeText={(v) => { setArea(v); clearError('area'); }}
+                  returnKeyType="next"
+                />
+              </View>
+              {errors.area && <Text style={styles.errorText}>{errors.area}</Text>}
             </View>
 
             {/* GPS Location */}
@@ -142,11 +222,16 @@ export default function CompleteSignUp({ navigation }: any) {
 
             {/* Submit */}
             <TouchableOpacity
-              style={styles.submitBtn}
+              style={[styles.submitBtn, submitting && styles.submitBtnDisabled]}
               onPress={handleSubmit}
               activeOpacity={0.85}
+              disabled={submitting}
             >
-              <Text style={styles.submitBtnText}>Submit</Text>
+              {submitting ? (
+                <ActivityIndicator color={WHITE} />
+              ) : (
+                <Text style={styles.submitBtnText}>Submit</Text>
+              )}
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -200,6 +285,16 @@ const styles = StyleSheet.create({
   inputWithIcon: {
     paddingRight: 52,
   },
+  inputError: {
+    borderColor: ERROR,
+  },
+  errorText: {
+    fontFamily: FONT_REGULAR,
+    color: ERROR,
+    fontSize: 12,
+    marginTop: 5,
+    marginLeft: 14,
+  },
   pinIcon: {
     position: 'absolute',
     right: 18,
@@ -221,6 +316,9 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
     elevation: 6,
+  },
+  submitBtnDisabled: {
+    opacity: 0.7,
   },
   submitBtnText: {
     fontFamily: FONT_BOLD,

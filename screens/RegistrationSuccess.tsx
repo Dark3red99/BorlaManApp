@@ -4,14 +4,15 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  SafeAreaView,
   StatusBar,
   Animated,
   Easing,
   Dimensions,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
+import type { RootStackScreenProps } from '../types/navigation';
 
 const { width, height } = Dimensions.get('window');
 const PRIMARY     = '#059669';
@@ -133,8 +134,8 @@ function CheckmarkCircle() {
 }
 
 // ─── Main Screen ───────────────────────────────────────────────────────
-export default function RegistrationSuccess({ navigation, route }: any) {
-  const userName = route?.params?.name ?? 'there';
+export default function RegistrationSuccess({ navigation, route }: RootStackScreenProps<'RegistrationSuccess'>) {
+  const userName = route.params?.name ?? 'there';
 
   // Staggered entrance anims
   const logoAnim    = useRef(new Animated.Value(0)).current;
@@ -219,7 +220,7 @@ export default function RegistrationSuccess({ navigation, route }: any) {
           <TouchableOpacity
             style={styles.dashBtn}
             activeOpacity={0.85}
-            onPress={() => navigation?.replace('Dashboard')}
+            onPress={() => navigation.reset({ index: 0, routes: [{ name: 'Dashboard' }] })}
           >
             <Text style={styles.dashBtnText}>Go to Dashboard</Text>
             <Ionicons name="arrow-forward" size={18} color={WHITE} />

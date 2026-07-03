@@ -4,11 +4,13 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   StatusBar,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import type { RootStackScreenProps } from '../types/navigation';
+import type { UserCategory } from '../types/models';
 
 const PRIMARY = '#059669';
 const TEXT = '#0F172A';
@@ -22,7 +24,7 @@ const FONT_BOLD = 'Poppins_700Bold';
 const FONT_EXTRABOLD = 'Poppins_800ExtraBold';
 
 type Category = {
-  id: string;
+  id: UserCategory;
   label: string;
   description: string;
   iconBg: string;
@@ -33,32 +35,32 @@ const CATEGORIES: Category[] = [
   {
     id: 'household',
     label: 'HouseHold',
-    description: 'Bottles, containers, packaging',
+    description: 'Homes and residences requesting pickups',
     iconBg: '#3B82F6',
     icon: <Ionicons name="home" size={32} color={WHITE} />,
   },
   {
     id: 'corporate',
     label: 'Corporate Organization',
-    description: 'Newspapers, boxes, documents',
+    description: 'Offices, shops and businesses',
     iconBg: '#F97316',
     icon: <MaterialCommunityIcons name="newspaper-variant" size={32} color={WHITE} />,
   },
   {
     id: 'aboboyaa',
     label: 'Aboboyaa',
-    description: 'Bottles, jars, broken glass',
+    description: 'Waste collectors with tricycles',
     iconBg: '#0891B2',
     icon: <Ionicons name="car" size={32} color={WHITE} />,
   },
 ];
 
-export default function SelectCategory({ navigation }: any) {
-  const [selected, setSelected] = useState<string | null>(null);
+export default function SelectCategory({ navigation, route }: RootStackScreenProps<'SelectCategory'>) {
+  const [selected, setSelected] = useState<UserCategory | null>(null);
 
   const handleContinue = () => {
     if (selected) {
-      navigation?.navigate('CompleteSignUp', { category: selected });
+      navigation.navigate('CompleteSignUp', { draft: route.params.draft, category: selected });
     }
   };
 
