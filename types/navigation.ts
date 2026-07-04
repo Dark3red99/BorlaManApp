@@ -19,6 +19,9 @@ export type RootStackParamList = {
   CompleteSignUp: { draft: SignupDraft; category: UserCategory };
   RegistrationSuccess: { name: string };
   Dashboard: undefined;
+  RequestPickup: undefined;
+  TrackPickup: { requestId: string };
+  PickupComplete: { requestId: string };
 };
 
 export type RootStackScreenProps<T extends keyof RootStackParamList> =

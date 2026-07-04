@@ -28,7 +28,20 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-font"
+      "expo-font",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "BorlaMan uses your location to set your pickup point and match you with nearby collectors."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "BorlaMan needs photo access so you can attach pictures of your waste to a pickup request.",
+          "cameraPermission": "BorlaMan uses the camera so you can photograph your waste for a pickup request."
+        }
+      ]
     ]
   }
 }

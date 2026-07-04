@@ -48,6 +48,7 @@ export type RequestStatus =
   | 'matched' // collector accepted
   | 'en-route'
   | 'arrived'
+  | 'collecting' // collector is loading the waste
   | 'completed'
   | 'cancelled';
 
@@ -64,6 +65,20 @@ export type CollectionRequest = {
   status: RequestStatus;
   priceGhs: number;
   createdAt: string;
+  completedAt?: string;
+};
+
+// Mirrors the future GET /quotes response so the estimate the user accepts
+// is computed with the same formula the backend will use.
+export type PriceQuote = {
+  priceGhs: number;
+  distanceKm: number;
+  breakdown: {
+    baseGhs: number;
+    distanceGhs: number;
+    weightGhs: number;
+    typeMultiplier: number;
+  };
 };
 
 export type PaymentMethod = 'momo' | 'card' | 'cash';

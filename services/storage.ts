@@ -8,6 +8,9 @@ export const StorageKeys = {
   users: '@borlaman/users',
   session: '@borlaman/session', // id of the signed-in user
   requests: '@borlaman/requests',
+  collectors: '@borlaman/collectors', // mock fleet, seeded around the first pickup point
+  payments: '@borlaman/payments',
+  ratings: '@borlaman/ratings',
 } as const;
 
 export async function readJson<T>(key: string, fallback: T): Promise<T> {
