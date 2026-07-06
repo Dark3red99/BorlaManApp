@@ -64,3 +64,14 @@ export const WASTE_TYPES: WasteTypeMeta[] = [
 
 export const wasteMeta = (type: WasteType): WasteTypeMeta =>
   WASTE_TYPES.find((w) => w.type === type) ?? WASTE_TYPES[0];
+
+// Rough weight bands so the user never has to guess exact kilos; shared by
+// the request wizard and the recurring-plan setup.
+export type SizeBand = { kg: number; label: string; hint: string };
+
+export const SIZE_BANDS: SizeBand[] = [
+  { kg: 10, label: 'Small', hint: '1–2 bags' },
+  { kg: 25, label: 'Medium', hint: '3–5 bags' },
+  { kg: 50, label: 'Large', hint: 'Bin / cart load' },
+  { kg: 80, label: 'Extra', hint: 'Bulky load' },
+];

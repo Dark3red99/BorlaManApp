@@ -3,16 +3,13 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-nati
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
 import type { PickupDraft } from '../RequestPickupScreen';
+import { PICKUP_SLOT_HOURS as SLOTS, slotLabel } from '../../../constants/schedule';
 
 const PRIMARY = '#059669';
 const WHITE   = '#FFFFFF';
 const TEXT    = '#0F172A';
 const MUTED   = '#64748B';
 const BORDER  = '#DCE8E1';
-
-// Fixed pickup windows — matches how collectors plan rounds; a full
-// time picker isn't needed for the mock.
-const SLOTS = [8, 10, 12, 14, 16];
 
 type Props = {
   draft: PickupDraft;
@@ -30,11 +27,6 @@ function slotIso(day: Date, hour: number): string {
   const d = new Date(day);
   d.setHours(hour, 0, 0, 0);
   return d.toISOString();
-}
-
-function slotLabel(hour: number): string {
-  const h12 = hour % 12 === 0 ? 12 : hour % 12;
-  return `${h12}:00 ${hour < 12 ? 'AM' : 'PM'}`;
 }
 
 export default function ScheduleStep({ draft, onChange }: Props) {

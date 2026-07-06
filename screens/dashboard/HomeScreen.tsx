@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -8,8 +8,15 @@ import {
   StatusBar,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
+
 import { useAuth } from '../../context/AuthContext';
+import * as pickupService from '../../services/pickupService';
+import type { CollectionRequest, ImpactStats } from '../../types/models';
+import { wasteMeta } from '../../constants/waste';
+import { REQUEST_STATUS_META } from '../../constants/requestStatus';
+import { addDays, formatTime, isSameDay, timeAgo } from '../../utils/datetime';
 
 const PRIMARY     = '#059669';
 const PICKUP_BG   = '#10B981';
@@ -20,22 +27,168 @@ const WHITE       = '#FFFFFF';
 const TEXT        = '#0F172A';
 const MUTED       = '#64748B';
 
-// ─── Impact data ────────────────────────────────────────────────
-const IMPACT_ITEMS = [
-  { id: 'waste', label: 'Total Waste Collected', value: '247 kg', progress: 0.72, iconBg: PRIMARY,   icon: <MaterialCommunityIcons name="trash-can-outline" size={18} color={WHITE} /> },
-  { id: 'co2',   label: 'CO₂ Offset',            value: '156 kg', progress: 0.58, iconBg: '#3B82F6', icon: <MaterialCommunityIcons name="leaf"              size={18} color={WHITE} /> },
-  { id: 'pts',   label: 'Impact Points',         value: '3,420',  progress: 0.84, iconBg: '#F59E0B', icon: <FontAwesome5           name="trophy"            size={16} color={WHITE} /> },
-];
+// Mock milestones the Impact Tracker progress bars fill toward; the backend
+// gamification service will own real goal tiers.
+const GOALS = { totalKg: 100, co2OffsetKg: 40, points: 600 };
 
-// ─── Recent activity data ────────────────────────────────────────
-const ACTIVITY = [
-  { id: 'a1', title: 'Pickup Completed', sub: '12.5 kg mixed recyclables • 2 hours ago', iconBg: '#DCFCE7', icon: <Ionicons name="checkmark" size={20} color="#16A34A" /> },
-  { id: 'a2', title: 'Points Earned',    sub: '+150 impact points • Yesterday',           iconBg: '#DBEAFE', icon: <FontAwesome5 name="coins" size={16} color="#3B82F6" /> },
-  { id: 'a3', title: 'Challenge Joined', sub: 'Community cleanup drive • 2 days ago',     iconBg: '#F3E8FF', icon: <Ionicons name="people" size={20} color="#9333EA" /> },
-];
+const NO_STATS: ImpactStats = { totalKg: 0, co2OffsetKg: 0, points: 0, completedCount: 0 };
+
+type ActivityEvent = {
+  id: string;
+  at: string;
+  title: string;
+  sub: string;
+  iconBg: string;
+  icon: React.ReactNode;
+};
+
+function dayLabel(d: Date): string {
+  const today = new Date();
+  if (isSameDay(d, today)) return 'Today';
+  if (isSameDay(d, addDays(today, 1))) return 'Tomorrow';
+  if (d.getTime() - today.getTime() < 7 * 24 * 3600 * 1000) {
+    return d.toLocaleDateString('en-US', { weekday: 'long' });
+  }
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
 
 export default function HomeScreen({ navigation }: any) {
   const { user } = useAuth();
+  const [next, setNext] = useState<pickupService.NextPickup | null>(null);
+  const [stats, setStats] = useState<ImpactStats>(NO_STATS);
+  const [requests, setRequests] = useState<CollectionRequest[]>([]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!user) return;
+      let unsubscribe: (() => void) | undefined;
+
+      const load = () => {
+        pickupService.getImpactStats(user.id).then(setStats);
+        pickupService.getRequests(user.id).then(setRequests);
+        pickupService.getNextPickup(user.id).then((np) => {
+          setNext(np);
+          if (np?.kind === 'active') {
+            // keep the card's status live while this tab is focused
+            unsubscribe?.();
+            unsubscribe = pickupService.subscribeToRequest(np.request.id, ({ request }) => {
+              if (request.status === 'completed' || request.status === 'cancelled') {
+                load(); // pickup just finished — refresh stats, activity & next pickup
+              } else {
+                setNext({ kind: 'active', request });
+              }
+            });
+          }
+        });
+      };
+
+      load();
+      return () => unsubscribe?.();
+    }, [user]),
+  );
+
+  const impactItems = useMemo(
+    () => [
+      {
+        id: 'waste',
+        label: 'Total Waste Collected',
+        value: `${stats.totalKg} kg`,
+        progress: Math.min(stats.totalKg / GOALS.totalKg, 1),
+        iconBg: PRIMARY,
+        icon: <MaterialCommunityIcons name="trash-can-outline" size={18} color={WHITE} />,
+      },
+      {
+        id: 'co2',
+        label: 'CO₂ Offset',
+        value: `${stats.co2OffsetKg} kg`,
+        progress: Math.min(stats.co2OffsetKg / GOALS.co2OffsetKg, 1),
+        iconBg: '#3B82F6',
+        icon: <MaterialCommunityIcons name="leaf" size={18} color={WHITE} />,
+      },
+      {
+        id: 'pts',
+        label: 'Impact Points',
+        value: stats.points.toLocaleString('en-US'),
+        progress: Math.min(stats.points / GOALS.points, 1),
+        iconBg: '#F59E0B',
+        icon: <FontAwesome5 name="trophy" size={16} color={WHITE} />,
+      },
+    ],
+    [stats],
+  );
+
+  const activity = useMemo<ActivityEvent[]>(() => {
+    const events: ActivityEvent[] = [];
+    for (const r of requests) {
+      const meta = wasteMeta(r.wasteType);
+      if (r.status === 'completed') {
+        const at = r.completedAt ?? r.createdAt;
+        events.push({
+          id: `${r.id}-done`,
+          at,
+          title: 'Pickup Completed',
+          sub: `${r.volumeKg} kg ${meta.label.toLowerCase()} • ${timeAgo(at)}`,
+          iconBg: '#DCFCE7',
+          icon: <Ionicons name="checkmark" size={20} color="#16A34A" />,
+        });
+        events.push({
+          id: `${r.id}-pts`,
+          at,
+          title: 'Points Earned',
+          sub: `+${pickupService.pointsForPickup(r.volumeKg)} impact points • ${timeAgo(at)}`,
+          iconBg: '#DBEAFE',
+          icon: <FontAwesome5 name="coins" size={16} color="#3B82F6" />,
+        });
+      } else if (r.status === 'cancelled') {
+        events.push({
+          id: `${r.id}-cxl`,
+          at: r.createdAt,
+          title: 'Pickup Cancelled',
+          sub: `${r.volumeKg} kg ${meta.label.toLowerCase()} • ${timeAgo(r.createdAt)}`,
+          iconBg: '#FEE2E2',
+          icon: <Ionicons name="close" size={20} color="#DC2626" />,
+        });
+      }
+    }
+    return events.sort((a, b) => b.at.localeCompare(a.at)).slice(0, 4);
+  }, [requests]);
+
+  // ── Next Pickup card content per state ──
+  const card = (() => {
+    if (next?.kind === 'active') {
+      const status = REQUEST_STATUS_META[next.request.status];
+      return {
+        badge: 'In Progress',
+        big: status.label,
+        sub: `${wasteMeta(next.request.wasteType).label} • ${next.request.addressText}`,
+        onPress: () => navigation.navigate('TrackPickup', { requestId: next.request.id }),
+      };
+    }
+    if (next?.kind === 'upcoming') {
+      const at = new Date(next.item.at);
+      const dateStr = at.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+      return {
+        badge: next.item.kind === 'recurring' ? 'Recurring' : 'Scheduled',
+        big: dayLabel(at),
+        sub: `${dateStr} • ${formatTime(at)} • ${wasteMeta(next.item.wasteType).label}`,
+        onPress: () => navigation.navigate('Schedule'),
+      };
+    }
+    return {
+      badge: null,
+      big: 'No pickup yet',
+      sub: 'Request one and a collector comes to you',
+      onPress: () => navigation.navigate('RequestPickup'),
+    };
+  })();
+
+  const openLiveMap = () => {
+    if (next?.kind === 'active') {
+      navigation.navigate('TrackPickup', { requestId: next.request.id });
+    } else {
+      navigation.navigate('Dispose');
+    }
+  };
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
@@ -52,19 +205,25 @@ export default function HomeScreen({ navigation }: any) {
             <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7}>
               <Ionicons name="notifications-outline" size={22} color={TEXT} />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7}>
+            <TouchableOpacity
+              style={styles.iconBtn}
+              activeOpacity={0.7}
+              onPress={() => navigation.navigate('Profile')}
+            >
               <Ionicons name="person-circle-outline" size={26} color={PRIMARY} />
             </TouchableOpacity>
           </View>
         </View>
 
         {/* ── Next Pickup Card ── */}
-        <View style={styles.pickupCard}>
+        <TouchableOpacity style={styles.pickupCard} activeOpacity={0.85} onPress={card.onPress}>
           <View style={styles.pickupTopRow}>
             <Text style={styles.pickupLabel}>Next Pickup</Text>
-            <View style={styles.scheduledBadge}>
-              <Text style={styles.scheduledText}>Scheduled</Text>
-            </View>
+            {card.badge && (
+              <View style={styles.scheduledBadge}>
+                <Text style={styles.scheduledText}>{card.badge}</Text>
+              </View>
+            )}
           </View>
 
           <View style={styles.pickupBody}>
@@ -73,15 +232,15 @@ export default function HomeScreen({ navigation }: any) {
             </View>
 
             <View style={styles.pickupInfo}>
-              <Text style={styles.pickupDay}>Tomorrow</Text>
-              <Text style={styles.pickupDate}>March 10, 2026 • 8:00 AM</Text>
+              <Text style={styles.pickupDay}>{card.big}</Text>
+              <Text style={styles.pickupDate} numberOfLines={1}>{card.sub}</Text>
             </View>
 
-            <TouchableOpacity style={styles.arrowBtn} activeOpacity={0.8} onPress={() => navigation.navigate('Schedule')}>
+            <View style={styles.arrowBtn}>
               <Ionicons name="chevron-forward" size={20} color={TEXT} />
-            </TouchableOpacity>
+            </View>
           </View>
-        </View>
+        </TouchableOpacity>
 
         {/* ── Quick Actions ── */}
         <View style={styles.quickRow}>
@@ -92,7 +251,7 @@ export default function HomeScreen({ navigation }: any) {
             <Text style={styles.quickLabel}>Schedule{'\n'}Pickup</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.quickCard} activeOpacity={0.8}>
+          <TouchableOpacity style={styles.quickCard} activeOpacity={0.8} onPress={openLiveMap}>
             <View style={styles.quickIconBox}>
               <Ionicons name="map" size={26} color={WHITE} />
             </View>
@@ -104,13 +263,13 @@ export default function HomeScreen({ navigation }: any) {
         <View style={styles.impactCard}>
           <View style={styles.impactHeader}>
             <Text style={styles.impactTitle}>Impact Tracker</Text>
-            <TouchableOpacity activeOpacity={0.7}>
-              <Text style={styles.viewAll}>View All</Text>
-            </TouchableOpacity>
+            <Text style={styles.viewAll}>
+              {stats.completedCount} pickup{stats.completedCount === 1 ? '' : 's'}
+            </Text>
           </View>
 
-          {IMPACT_ITEMS.map((item, idx) => (
-            <View key={item.id} style={[styles.impactRow, idx < IMPACT_ITEMS.length - 1 && styles.impactRowBorder]}>
+          {impactItems.map((item, idx) => (
+            <View key={item.id} style={[styles.impactRow, idx < impactItems.length - 1 && styles.impactRowBorder]}>
               <View style={[styles.impactIconBox, { backgroundColor: item.iconBg }]}>
                 {item.icon}
               </View>
@@ -134,17 +293,26 @@ export default function HomeScreen({ navigation }: any) {
         <View style={styles.activityCard}>
           <Text style={styles.activityTitle}>Recent Activity</Text>
 
-          {ACTIVITY.map((item, idx) => (
-            <View key={item.id} style={[styles.activityRow, idx < ACTIVITY.length - 1 && styles.activityRowBorder]}>
-              <View style={[styles.activityIconBox, { backgroundColor: item.iconBg }]}>
-                {item.icon}
-              </View>
-              <View style={styles.activityText}>
-                <Text style={styles.activityItemTitle}>{item.title}</Text>
-                <Text style={styles.activityItemSub}>{item.sub}</Text>
-              </View>
+          {activity.length === 0 ? (
+            <View style={styles.emptyActivity}>
+              <MaterialCommunityIcons name="history" size={26} color={MUTED} />
+              <Text style={styles.emptyActivityText}>
+                No activity yet — request your first pickup from the Dispose tab.
+              </Text>
             </View>
-          ))}
+          ) : (
+            activity.map((item, idx) => (
+              <View key={item.id} style={[styles.activityRow, idx < activity.length - 1 && styles.activityRowBorder]}>
+                <View style={[styles.activityIconBox, { backgroundColor: item.iconBg }]}>
+                  {item.icon}
+                </View>
+                <View style={styles.activityText}>
+                  <Text style={styles.activityItemTitle}>{item.title}</Text>
+                  <Text style={styles.activityItemSub}>{item.sub}</Text>
+                </View>
+              </View>
+            ))
+          )}
         </View>
 
         <View style={{ height: 8 }} />
@@ -433,5 +601,17 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: MUTED,
     lineHeight: 17,
+  },
+  emptyActivity: {
+    alignItems: 'center',
+    paddingVertical: 20,
+    gap: 10,
+  },
+  emptyActivityText: {
+    fontFamily: 'Poppins_400Regular',
+    fontSize: 12,
+    color: MUTED,
+    textAlign: 'center',
+    lineHeight: 18,
   },
 });

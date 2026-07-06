@@ -1,6 +1,15 @@
-import React, { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import React, { useCallback, useMemo, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, Switch } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+
+import { useAuth } from '../context/AuthContext';
+import * as pickupService from '../services/pickupService';
+import type { RecurringPickup, ScheduleItem } from '../types/models';
+import { wasteMeta } from '../constants/waste';
+import { REQUEST_STATUS_META, type StatusMeta } from '../constants/requestStatus';
+import { slotLabel, WEEKDAY_LONG } from '../constants/schedule';
+import { addDays, formatTime, isSameDay, toDateKey } from '../utils/datetime';
 
 const PRIMARY      = '#059669';
 const PRIMARY_SOFT = '#ECFDF5';
@@ -15,42 +24,9 @@ const FONT_SEMIBOLD  = 'Poppins_600SemiBold';
 const FONT_BOLD      = 'Poppins_700Bold';
 const FONT_EXTRABOLD = 'Poppins_800ExtraBold';
 
-type PickupStatus = 'scheduled' | 'en-route' | 'completed';
-
-type Pickup = {
-  id: string;
-  date: string; // yyyy-mm-dd (local)
-  time: string;
-  type: string;
-  icon: React.ComponentProps<typeof MaterialCommunityIcons>['name'];
-  iconBg: string;
-  address: string;
-  status: PickupStatus;
-};
-
-const STATUS_META: Record<PickupStatus, { label: string; color: string; bg: string }> = {
-  scheduled:  { label: 'Scheduled', color: '#2563EB', bg: '#EFF6FF' },
-  'en-route': { label: 'En Route',  color: '#B45309', bg: '#FFFBEB' },
-  completed:  { label: 'Completed', color: '#047857', bg: '#ECFDF5' },
-};
+const RECURRING_META: StatusMeta = { label: 'Recurring', color: '#7C3AED', colorSoft: '#F3E8FF' };
 
 const WEEKDAY_LABELS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
-
-function toKey(d: Date) {
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${d.getFullYear()}-${m}-${day}`;
-}
-
-function addDays(d: Date, n: number) {
-  const x = new Date(d);
-  x.setDate(x.getDate() + n);
-  return x;
-}
-
-function isSameDay(a: Date, b: Date) {
-  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
-}
 
 /** Full weeks (Monday-first) covering the given month, padded with adjacent-month days. */
 function buildMonthGrid(year: number, month: number): Date[] {
@@ -63,20 +39,6 @@ function buildMonthGrid(year: number, month: number): Date[] {
   return Array.from({ length: total }, (_, i) => addDays(start, i));
 }
 
-/** Mock pickups pinned relative to today so the calendar always has data to show. */
-function buildMockPickups(today: Date): Pickup[] {
-  const key = (offset: number) => toKey(addDays(today, offset));
-  return [
-    { id: 'p0', date: key(-3), time: '9:30 AM',  type: 'Recyclables',     icon: 'recycle',           iconBg: '#3B82F6', address: '12 Ring Road, Accra', status: 'completed' },
-    { id: 'p1', date: key(0),  time: '8:00 AM',  type: 'Household Waste', icon: 'trash-can-outline', iconBg: '#059669', address: '12 Ring Road, Accra', status: 'scheduled' },
-    { id: 'p2', date: key(0),  time: '2:30 PM',  type: 'Recyclables',     icon: 'recycle',           iconBg: '#3B82F6', address: '12 Ring Road, Accra', status: 'en-route' },
-    { id: 'p3', date: key(2),  time: '9:00 AM',  type: 'Organic Waste',   icon: 'leaf',              iconBg: '#F59E0B', address: '12 Ring Road, Accra', status: 'scheduled' },
-    { id: 'p4', date: key(5),  time: '10:00 AM', type: 'Household Waste', icon: 'trash-can-outline', iconBg: '#059669', address: '12 Ring Road, Accra', status: 'scheduled' },
-    { id: 'p5', date: key(9),  time: '11:15 AM', type: 'Recyclables',     icon: 'recycle',           iconBg: '#3B82F6', address: '12 Ring Road, Accra', status: 'scheduled' },
-    { id: 'p6', date: key(14), time: '8:30 AM',  type: 'Organic Waste',   icon: 'leaf',              iconBg: '#F59E0B', address: '12 Ring Road, Accra', status: 'scheduled' },
-  ];
-}
-
 function formatSelectedLabel(selected: Date, today: Date) {
   if (isSameDay(selected, today)) return 'Today';
   if (isSameDay(selected, addDays(today, 1))) return 'Tomorrow';
@@ -85,25 +47,41 @@ function formatSelectedLabel(selected: Date, today: Date) {
 }
 
 export default function ScheduleTab() {
+  const { user } = useAuth();
+  const navigation = useNavigation();
+
   // Lazy state (not useMemo) so "today" is guaranteed stable for the mount.
   const [today] = useState(() => new Date());
-  const [pickups] = useState(() => buildMockPickups(today));
-
   const [cursor, setCursor] = useState(() => new Date(today.getFullYear(), today.getMonth(), 1));
   const [selected, setSelected] = useState(today);
+  const [items, setItems] = useState<ScheduleItem[]>([]);
+  const [plans, setPlans] = useState<RecurringPickup[]>([]);
 
   const grid = useMemo(
     () => buildMonthGrid(cursor.getFullYear(), cursor.getMonth()),
     [cursor],
   );
 
-  const pickupsByDate = useMemo(() => {
-    const map: Record<string, Pickup[]> = {};
-    for (const p of pickups) (map[p.date] ??= []).push(p);
-    return map;
-  }, [pickups]);
+  const load = useCallback(() => {
+    if (!user) return;
+    const from = grid[0];
+    const to = new Date(grid[grid.length - 1]);
+    to.setHours(23, 59, 59, 999);
+    pickupService.getSchedule(user.id, from.toISOString(), to.toISOString()).then(setItems);
+    pickupService.getRecurringPickups(user.id).then(setPlans);
+  }, [user, grid]);
 
-  const selectedPickups = pickupsByDate[toKey(selected)] ?? [];
+  // Reload whenever the tab regains focus (e.g. returning from the plan form)
+  // or the visible month changes.
+  useFocusEffect(load);
+
+  const itemsByDate = useMemo(() => {
+    const map: Record<string, ScheduleItem[]> = {};
+    for (const item of items) (map[toDateKey(new Date(item.at))] ??= []).push(item);
+    return map;
+  }, [items]);
+
+  const selectedItems = itemsByDate[toDateKey(selected)] ?? [];
   const monthLabel = cursor.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
   const viewingCurrentMonth =
     cursor.getFullYear() === today.getFullYear() && cursor.getMonth() === today.getMonth();
@@ -124,8 +102,31 @@ export default function ScheduleTab() {
     }
   };
 
-  const handleAddPickup = () => {
-    Alert.alert('Schedule Pickup', 'Booking a new pickup is coming soon.');
+  const openItem = (item: ScheduleItem) => {
+    // Only in-flight requests have a screen to open; recurring occurrences
+    // and finished pickups are informational.
+    if (item.kind === 'request' && item.requestId && item.status !== 'completed') {
+      navigation.navigate('TrackPickup', { requestId: item.requestId });
+    }
+  };
+
+  const togglePlan = (plan: RecurringPickup, active: boolean) => {
+    pickupService.setRecurringActive(plan.id, active).then(load);
+  };
+
+  const removePlan = (plan: RecurringPickup) => {
+    Alert.alert(
+      'Delete recurring pickup?',
+      `Every ${WEEKDAY_LONG[plan.weekday]}, ${slotLabel(plan.hour)} — this can't be undone.`,
+      [
+        { text: 'Keep it', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => pickupService.deleteRecurringPickup(plan.id).then(load),
+        },
+      ],
+    );
   };
 
   return (
@@ -139,9 +140,9 @@ export default function ScheduleTab() {
         <TouchableOpacity
           style={styles.addBtn}
           activeOpacity={0.85}
-          onPress={handleAddPickup}
+          onPress={() => navigation.navigate('RecurringPickup')}
           accessibilityRole="button"
-          accessibilityLabel="Schedule a new pickup"
+          accessibilityLabel="Set up a recurring pickup"
         >
           <Ionicons name="add" size={24} color={WHITE} />
         </TouchableOpacity>
@@ -190,11 +191,11 @@ export default function ScheduleTab() {
         {/* Day grid */}
         <View style={styles.daysGrid}>
           {grid.map((day) => {
-            const dayKey = toKey(day);
+            const dayKey = toDateKey(day);
             const inMonth = day.getMonth() === cursor.getMonth();
             const isToday = isSameDay(day, today);
             const isSelected = isSameDay(day, selected);
-            const dayPickups = pickupsByDate[dayKey] ?? [];
+            const dayItems = itemsByDate[dayKey] ?? [];
 
             return (
               <TouchableOpacity
@@ -225,12 +226,12 @@ export default function ScheduleTab() {
                   </Text>
                 </View>
                 <View style={styles.dotRow}>
-                  {dayPickups.slice(0, 3).map((p) => (
+                  {dayItems.slice(0, 3).map((item) => (
                     <View
-                      key={p.id}
+                      key={item.id}
                       style={[
                         styles.eventDot,
-                        { backgroundColor: isSelected ? PRIMARY : p.iconBg },
+                        { backgroundColor: isSelected ? PRIMARY : wasteMeta(item.wasteType).color },
                         !inMonth && styles.eventDotOutside,
                       ]}
                     />
@@ -242,45 +243,105 @@ export default function ScheduleTab() {
         </View>
       </View>
 
+      {/* Recurring plans */}
+      {plans.length > 0 && (
+        <View style={styles.plansCard}>
+          <Text style={styles.plansTitle}>Recurring plans</Text>
+          {plans.map((plan, idx) => {
+            const meta = wasteMeta(plan.wasteType);
+            return (
+              <View
+                key={plan.id}
+                style={[styles.planRow, idx < plans.length - 1 && styles.planRowBorder]}
+              >
+                <View style={[styles.planIconBox, { backgroundColor: meta.colorSoft }]}>
+                  <MaterialCommunityIcons name={meta.icon as any} size={20} color={meta.color} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.planType}>{meta.label} · ~{plan.volumeKg} kg</Text>
+                  <Text style={styles.planMeta}>
+                    Every {WEEKDAY_LONG[plan.weekday]}, {slotLabel(plan.hour)}
+                  </Text>
+                </View>
+                <Switch
+                  value={plan.active}
+                  onValueChange={(v) => togglePlan(plan, v)}
+                  trackColor={{ false: '#CBD5E1', true: '#A7F3D0' }}
+                  thumbColor={plan.active ? PRIMARY : '#F1F5F9'}
+                />
+                <TouchableOpacity
+                  onPress={() => removePlan(plan)}
+                  activeOpacity={0.7}
+                  accessibilityRole="button"
+                  accessibilityLabel="Delete recurring pickup"
+                  style={styles.planDeleteBtn}
+                >
+                  <Ionicons name="trash-outline" size={18} color={MUTED} />
+                </TouchableOpacity>
+              </View>
+            );
+          })}
+        </View>
+      )}
+
       {/* Pickups for selected day */}
       <View style={styles.listSection}>
         <Text style={styles.sectionLabel}>
           {formatSelectedLabel(selected, today)}
-          {selectedPickups.length > 0 &&
-            ` · ${selectedPickups.length} pickup${selectedPickups.length > 1 ? 's' : ''}`}
+          {selectedItems.length > 0 &&
+            ` · ${selectedItems.length} pickup${selectedItems.length > 1 ? 's' : ''}`}
         </Text>
 
-        {selectedPickups.length === 0 ? (
+        {selectedItems.length === 0 ? (
           <View style={styles.emptyState}>
             <View style={styles.emptyIconBox}>
               <Ionicons name="calendar-clear-outline" size={28} color={PRIMARY} />
             </View>
             <Text style={styles.emptyTitle}>No pickups this day</Text>
-            <Text style={styles.emptyText}>You don't have any waste pickups scheduled.</Text>
-            <TouchableOpacity style={styles.emptyBtn} activeOpacity={0.85} onPress={handleAddPickup}>
-              <Text style={styles.emptyBtnText}>Schedule a Pickup</Text>
+            <Text style={styles.emptyText}>
+              Request a one-off pickup, or use + above to set up a weekly plan.
+            </Text>
+            <TouchableOpacity
+              style={styles.emptyBtn}
+              activeOpacity={0.85}
+              onPress={() => navigation.navigate('RequestPickup')}
+            >
+              <Text style={styles.emptyBtnText}>Request a Pickup</Text>
             </TouchableOpacity>
           </View>
         ) : (
           <View style={styles.cardList}>
-            {selectedPickups.map((pickup) => {
-              const status = STATUS_META[pickup.status];
+            {selectedItems.map((item) => {
+              const meta = wasteMeta(item.wasteType);
+              const status =
+                item.kind === 'request' && item.status
+                  ? REQUEST_STATUS_META[item.status]
+                  : RECURRING_META;
+              const tappable = item.kind === 'request' && item.status !== 'completed';
               return (
-                <TouchableOpacity key={pickup.id} style={styles.pickupCard} activeOpacity={0.8}>
-                  <View style={[styles.pickupIconBox, { backgroundColor: pickup.iconBg }]}>
-                    <MaterialCommunityIcons name={pickup.icon} size={22} color={WHITE} />
+                <TouchableOpacity
+                  key={item.id}
+                  style={styles.pickupCard}
+                  activeOpacity={tappable ? 0.8 : 1}
+                  onPress={() => openItem(item)}
+                  disabled={!tappable}
+                >
+                  <View style={[styles.pickupIconBox, { backgroundColor: meta.color }]}>
+                    <MaterialCommunityIcons name={meta.icon as any} size={22} color={WHITE} />
                   </View>
 
                   <View style={styles.pickupInfo}>
-                    <Text style={styles.pickupType}>{pickup.type}</Text>
-                    <Text style={styles.pickupMeta}>{pickup.time} · {pickup.address}</Text>
+                    <Text style={styles.pickupType}>{meta.label} · {item.volumeKg} kg</Text>
+                    <Text style={styles.pickupMeta} numberOfLines={1}>
+                      {formatTime(new Date(item.at))} · {item.addressText}
+                    </Text>
                   </View>
 
                   <View style={styles.pickupRight}>
-                    <View style={[styles.statusBadge, { backgroundColor: status.bg }]}>
+                    <View style={[styles.statusBadge, { backgroundColor: status.colorSoft }]}>
                       <Text style={[styles.statusText, { color: status.color }]}>{status.label}</Text>
                     </View>
-                    <Ionicons name="chevron-forward" size={18} color={MUTED} />
+                    {tappable && <Ionicons name="chevron-forward" size={18} color={MUTED} />}
                   </View>
                 </TouchableOpacity>
               );
@@ -436,6 +497,60 @@ const styles = StyleSheet.create({
   },
   eventDotOutside: {
     opacity: 0.35,
+  },
+
+  // Recurring plans
+  plansCard: {
+    backgroundColor: WHITE,
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  plansTitle: {
+    fontFamily: FONT_BOLD,
+    fontSize: 15,
+    color: TEXT,
+    marginBottom: 4,
+  },
+  planRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 10,
+  },
+  planRowBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+  planIconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  planType: {
+    fontFamily: FONT_SEMIBOLD,
+    fontSize: 13,
+    color: TEXT,
+  },
+  planMeta: {
+    fontFamily: FONT_REGULAR,
+    fontSize: 11.5,
+    color: MUTED,
+    marginTop: 1,
+  },
+  planDeleteBtn: {
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   // List section

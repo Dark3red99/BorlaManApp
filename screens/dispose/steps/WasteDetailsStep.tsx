@@ -11,7 +11,7 @@ import {
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 
-import { WASTE_TYPES } from '../../../constants/waste';
+import { WASTE_TYPES, SIZE_BANDS as SIZES } from '../../../constants/waste';
 import type { PickupDraft } from '../RequestPickupScreen';
 
 const PRIMARY = '#059669';
@@ -21,14 +21,6 @@ const MUTED   = '#64748B';
 const BORDER  = '#DCE8E1';
 
 const MAX_PHOTOS = 3;
-
-// Rough weight bands so the user never has to guess exact kilos.
-const SIZES = [
-  { kg: 10, label: 'Small', hint: '1–2 bags' },
-  { kg: 25, label: 'Medium', hint: '3–5 bags' },
-  { kg: 50, label: 'Large', hint: 'Bin / cart load' },
-  { kg: 80, label: 'Extra', hint: 'Bulky load' },
-];
 
 type Props = {
   draft: PickupDraft;

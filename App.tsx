@@ -25,6 +25,9 @@ import Dashboard from './screens/Dashboard';
 import RequestPickupScreen from './screens/dispose/RequestPickupScreen';
 import TrackPickupScreen from './screens/dispose/TrackPickupScreen';
 import PickupCompleteScreen from './screens/dispose/PickupCompleteScreen';
+import RecurringPickupScreen from './screens/schedule/RecurringPickupScreen';
+import GuideScreen from './screens/learn/GuideScreen';
+import QuizScreen from './screens/learn/QuizScreen';
 import { Colors } from './constants/theme';
 import { AuthProvider } from './context/AuthContext';
 import type { RootStackParamList } from './types/navigation';
@@ -66,6 +69,9 @@ export default function App() {
             <Stack.Screen name="RequestPickup" component={RequestPickupScreen} />
             <Stack.Screen name="TrackPickup" component={TrackPickupScreen} />
             <Stack.Screen name="PickupComplete" component={PickupCompleteScreen} />
+            <Stack.Screen name="RecurringPickup" component={RecurringPickupScreen} />
+            <Stack.Screen name="Guide" component={GuideScreen} />
+            <Stack.Screen name="Quiz" component={QuizScreen} />
           </Stack.Navigator>
           <StatusBar style="light" />
         </NavigationContainer>

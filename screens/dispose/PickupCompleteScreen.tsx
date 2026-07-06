@@ -96,7 +96,7 @@ export default function PickupCompleteScreen({ navigation, route }: RootStackScr
           </Text>
           <View style={styles.pointsPill}>
             <MaterialCommunityIcons name="leaf" size={14} color={PRIMARY} />
-            <Text style={styles.pointsText}>+{Math.round(request.volumeKg * 6)} impact points</Text>
+            <Text style={styles.pointsText}>+{pickupService.pointsForPickup(request.volumeKg)} impact points</Text>
           </View>
         </View>
 

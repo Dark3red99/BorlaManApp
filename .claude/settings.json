@@ -5,7 +5,8 @@
       "Bash(xargs grep -l \"id\")",
       "Bash(npx tsc *)",
       "PowerShell(npx tsc --noEmit 2>$null)",
-      "PowerShell(if \\($?\\) { \"TYPECHECK PASSED\" } else { \"TYPECHECK FAILED\" })"
+      "PowerShell(if \\($?\\) { \"TYPECHECK PASSED\" } else { \"TYPECHECK FAILED\" })",
+      "PowerShell(npx tsc --noEmit)"
     ]
   }
 }

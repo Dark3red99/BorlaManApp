@@ -2,14 +2,19 @@ import type {
   Collector,
   CollectionRequest,
   GeoPoint,
+  ImpactStats,
   Payment,
   PaymentMethod,
   PriceQuote,
+  QuizResult,
   Rating,
+  RecurringPickup,
   RequestStatus,
+  ScheduleItem,
   WasteType,
 } from '../types/models';
 import { wasteMeta } from '../constants/waste';
+import { addDays, startOfDay, toDateKey } from '../utils/datetime';
 import { etaMinutes, haversineKm, moveToward, offsetKm } from '../utils/geo';
 import { StorageKeys, readJson, writeJson } from './storage';
 
@@ -237,6 +242,151 @@ export async function submitRating(
   };
   await writeJson(StorageKeys.ratings, [...ratings, rating]);
   return rating;
+}
+
+// ── Impact ───────────────────────────────────────────────────────
+// Mock conversion factors; the backend impact service will own these.
+export const IMPACT = {
+  pointsPerKg: 6,
+  co2PerKg: 0.4, // kg CO₂ avoided per kg diverted from open dumping/burning
+};
+
+export function pointsForPickup(volumeKg: number): number {
+  return Math.round(volumeKg * IMPACT.pointsPerKg);
+}
+
+export async function getImpactStats(userId: string): Promise<ImpactStats> {
+  const completed = (await getRequests(userId)).filter((r) => r.status === 'completed');
+  const totalKg = completed.reduce((sum, r) => sum + r.volumeKg, 0);
+  // summed per pickup so the total matches the points shown on each receipt
+  const pickupPoints = completed.reduce((sum, r) => sum + pointsForPickup(r.volumeKg), 0);
+  // Learn & Earn quiz points share this balance; read straight from storage
+  // (not learnService) to keep the service dependency one-way. The backend
+  // /me/impact will join both sources server-side.
+  const quizResults = await readJson<QuizResult[]>(StorageKeys.quizResults, []);
+  const quizPoints = quizResults
+    .filter((q) => q.userId === userId)
+    .reduce((sum, q) => sum + q.pointsEarned, 0);
+  return {
+    totalKg,
+    co2OffsetKg: Math.round(totalKg * IMPACT.co2PerKg),
+    points: pickupPoints + quizPoints,
+    completedCount: completed.length,
+  };
+}
+
+// ── Recurring pickups ────────────────────────────────────────────
+
+export type NewRecurringInput = {
+  userId: string;
+  wasteType: WasteType;
+  volumeKg: number;
+  weekday: number; // 0 = Sunday … 6 = Saturday
+  hour: number; // pickup window start, 24h
+  location: GeoPoint;
+  addressText: string;
+};
+
+async function getAllRecurring(): Promise<RecurringPickup[]> {
+  return readJson<RecurringPickup[]>(StorageKeys.recurring, []);
+}
+
+export async function createRecurringPickup(input: NewRecurringInput): Promise<RecurringPickup> {
+  const plan: RecurringPickup = {
+    id: `rc_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`,
+    ...input,
+    active: true,
+    createdAt: new Date().toISOString(),
+  };
+  await writeJson(StorageKeys.recurring, [...(await getAllRecurring()), plan]);
+  return plan;
+}
+
+export async function getRecurringPickups(userId: string): Promise<RecurringPickup[]> {
+  const all = await getAllRecurring();
+  return all
+    .filter((p) => p.userId === userId)
+    .sort((a, b) => a.weekday - b.weekday || a.hour - b.hour);
+}
+
+export async function setRecurringActive(id: string, active: boolean): Promise<void> {
+  const all = await getAllRecurring();
+  await writeJson(StorageKeys.recurring, all.map((p) => (p.id === id ? { ...p, active } : p)));
+}
+
+export async function deleteRecurringPickup(id: string): Promise<void> {
+  const all = await getAllRecurring();
+  await writeJson(StorageKeys.recurring, all.filter((p) => p.id !== id));
+}
+
+// ── Schedule feed ────────────────────────────────────────────────
+// Merges real requests with projected occurrences of active recurring plans
+// (the future GET /me/schedule?from&to). Occurrences are projected forward
+// only — the mock never backfills plan slots that already passed; the real
+// backend will materialize requests from plans instead.
+
+export async function getSchedule(
+  userId: string,
+  fromIso: string,
+  toIso: string,
+): Promise<ScheduleItem[]> {
+  const from = new Date(fromIso);
+  const to = new Date(toIso);
+  const now = new Date();
+  const items: ScheduleItem[] = [];
+
+  const requests = await getRequests(userId);
+  for (const r of requests) {
+    if (r.status === 'cancelled') continue;
+    const at = new Date(r.scheduledFor);
+    if (at < from || at > to) continue;
+    items.push({
+      id: r.id,
+      at: r.scheduledFor,
+      kind: 'request',
+      wasteType: r.wasteType,
+      volumeKg: r.volumeKg,
+      addressText: r.addressText,
+      status: r.status,
+      requestId: r.id,
+    });
+  }
+
+  const plans = (await getRecurringPickups(userId)).filter((p) => p.active);
+  for (const plan of plans) {
+    for (let day = startOfDay(from); day <= to; day = addDays(day, 1)) {
+      if (day.getDay() !== plan.weekday) continue;
+      const at = new Date(day);
+      at.setHours(plan.hour, 0, 0, 0);
+      if (at < now || at < from || at > to) continue;
+      items.push({
+        id: `${plan.id}@${toDateKey(day)}`,
+        at: at.toISOString(),
+        kind: 'recurring',
+        wasteType: plan.wasteType,
+        volumeKg: plan.volumeKg,
+        addressText: plan.addressText,
+        recurringId: plan.id,
+      });
+    }
+  }
+
+  return items.sort((a, b) => a.at.localeCompare(b.at));
+}
+
+export type NextPickup =
+  | { kind: 'active'; request: CollectionRequest }
+  | { kind: 'upcoming'; item: ScheduleItem };
+
+/** The Home card's data: an in-flight request wins; otherwise the nearest
+ *  upcoming schedule item within two weeks. */
+export async function getNextPickup(userId: string): Promise<NextPickup | null> {
+  const active = await getActiveRequest(userId);
+  if (active) return { kind: 'active', request: active };
+  const now = new Date();
+  const items = await getSchedule(userId, now.toISOString(), addDays(now, 14).toISOString());
+  const upcoming = items.find((i) => new Date(i.at) > now && i.status !== 'completed');
+  return upcoming ? { kind: 'upcoming', item: upcoming } : null;
 }
 
 // ── Live tracking simulation ─────────────────────────────────────

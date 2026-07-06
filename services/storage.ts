@@ -11,6 +11,8 @@ export const StorageKeys = {
   collectors: '@borlaman/collectors', // mock fleet, seeded around the first pickup point
   payments: '@borlaman/payments',
   ratings: '@borlaman/ratings',
+  recurring: '@borlaman/recurring', // standing weekly pickup plans
+  quizResults: '@borlaman/quizResults', // Learn & Earn quiz standings
 } as const;
 
 export async function readJson<T>(key: string, fallback: T): Promise<T> {

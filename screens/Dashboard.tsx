@@ -6,9 +6,9 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
 import HomeScreen from './dashboard/HomeScreen';
 import ScheduleScreen from './dashboard/ScheduleScreen';
-import ComingSoonScreen from './dashboard/ComingSoonScreen';
 import ProfileScreen from './dashboard/ProfileScreen';
 import DisposeScreen from './dispose/DisposeScreen';
+import LearnEarnScreen from './learn/LearnEarnScreen';
 
 const PRIMARY = '#059669';
 const WHITE   = '#FFFFFF';
@@ -92,7 +92,7 @@ export default function Dashboard() {
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Schedule" component={ScheduleScreen} />
       <Tab.Screen name="Dispose" component={DisposeScreen} />
-      <Tab.Screen name="LearnEarn" component={ComingSoonScreen} />
+      <Tab.Screen name="LearnEarn" component={LearnEarnScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );

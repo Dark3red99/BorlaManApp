@@ -1,5 +1,5 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { UserCategory } from './models';
+import type { UserCategory, WasteType } from './models';
 
 // Fields collected on the Registration screen, carried through
 // SelectCategory → CompleteSignUp until the account is created.
@@ -22,6 +22,9 @@ export type RootStackParamList = {
   RequestPickup: undefined;
   TrackPickup: { requestId: string };
   PickupComplete: { requestId: string };
+  RecurringPickup: undefined;
+  Guide: { wasteType: WasteType };
+  Quiz: { wasteType: WasteType };
 };
 
 export type RootStackScreenProps<T extends keyof RootStackParamList> =
