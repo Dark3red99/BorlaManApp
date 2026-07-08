@@ -10,10 +10,10 @@ import {
   Platform,
   StatusBar,
   Alert,
+  useWindowDimensions,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import Svg, { Path, G, ClipPath, Defs, Rect } from 'react-native-svg';
 import type { RootStackScreenProps } from '../types/navigation';
 import {
   validateFullName,
@@ -21,8 +21,12 @@ import {
   validatePassword,
   validateConfirmPassword,
 } from '../utils/validation';
+import AuthHero from '../components/AuthHero';
+import GoogleIcon from '../components/GoogleIcon';
+import WaveDivider from '../components/WaveDivider';
 
 const PRIMARY = '#059669';
+const PRIMARY_SOFT = '#ECFDF5';
 const TEXT = '#0F172A';
 const BORDER = '#D3E8DD';
 const ERROR = '#E53935';
@@ -36,10 +40,14 @@ const FONT_MEDIUM = 'Poppins_500Medium';
 const FONT_SEMIBOLD = 'Poppins_600SemiBold';
 const FONT_BOLD = 'Poppins_700Bold';
 const FONT_EXTRABOLD = 'Poppins_800ExtraBold';
+const WIDE_BREAKPOINT = 768;
 
 type Errors = Partial<Record<'fullName' | 'phone' | 'password' | 'confirmPassword', string>>;
 
 export default function Registration({ navigation }: RootStackScreenProps<'Registration'>) {
+  const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const isWide = width >= WIDE_BREAKPOINT;
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
@@ -71,191 +79,179 @@ export default function Registration({ navigation }: RootStackScreenProps<'Regis
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="dark-content" backgroundColor={WHITE} />
+    <SafeAreaView style={styles.safe} edges={['left', 'right']}>
+      <StatusBar barStyle="dark-content" backgroundColor={PRIMARY_SOFT} />
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <ScrollView
-          contentContainerStyle={styles.scroll}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Heading */}
-          <Text style={styles.heading}>Create your account</Text>
+        <View style={[styles.shell, isWide && styles.shellWide]}>
+          {/* Illustration header — top band on phones, left panel on wide screens */}
+          <AuthHero wide={isWide} />
 
-          {/* Form */}
-          <View style={styles.form}>
-            {/* Full Name */}
-            <View>
-              <View style={styles.inputWrapper}>
-                <TextInput
-                  style={[styles.input, errors.fullName ? styles.inputError : null]}
-                  placeholder="Full name"
-                  placeholderTextColor={PLACEHOLDER}
-                  value={fullName}
-                  onChangeText={(v) => { setFullName(v); clearError('fullName'); }}
-                  autoCapitalize="words"
-                  textContentType="name"
-                  autoComplete="name"
-                  returnKeyType="next"
-                />
-              </View>
-              {errors.fullName && <Text style={styles.errorText}>{errors.fullName}</Text>}
-            </View>
+          <ScrollView
+            style={styles.formPane}
+            contentContainerStyle={styles.scroll}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={[styles.formColumn, isWide && styles.formColumnWide]}>
+              {/* Heading */}
+              <Text style={styles.heading}>Create your account</Text>
 
-            {/* Phone Number */}
-            <View>
-              <View style={styles.inputWrapper}>
-                <TextInput
-                  style={[styles.input, errors.phone ? styles.inputError : null]}
-                  placeholder="Phone Number"
-                  placeholderTextColor={PLACEHOLDER}
-                  value={phone}
-                  onChangeText={(v) => { setPhone(v); clearError('phone'); }}
-                  keyboardType="phone-pad"
-                  textContentType="telephoneNumber"
-                  autoComplete="tel"
-                  returnKeyType="next"
-                />
-              </View>
-              {errors.phone && <Text style={styles.errorText}>{errors.phone}</Text>}
-            </View>
+              {/* Form */}
+              <View style={styles.form}>
+                {/* Full Name */}
+                <View>
+                  <View style={styles.inputWrapper}>
+                    <TextInput
+                      style={[styles.input, styles.inputWithLeadingIcon, errors.fullName ? styles.inputError : null]}
+                      placeholder="Full name"
+                      placeholderTextColor={PLACEHOLDER}
+                      value={fullName}
+                      onChangeText={(v) => { setFullName(v); clearError('fullName'); }}
+                      autoCapitalize="words"
+                      textContentType="name"
+                      autoComplete="name"
+                      returnKeyType="next"
+                    />
+                    <View style={styles.leadingIcon} pointerEvents="none">
+                      <Ionicons name="person-outline" size={20} color={PRIMARY} />
+                    </View>
+                  </View>
+                  {errors.fullName && <Text style={styles.errorText}>{errors.fullName}</Text>}
+                </View>
 
-            {/* Password */}
-            <View>
-              <View style={styles.inputWrapper}>
-                <TextInput
-                  style={[styles.input, styles.inputWithIcon, errors.password ? styles.inputError : null]}
-                  placeholder="Password"
-                  placeholderTextColor={PLACEHOLDER}
-                  value={password}
-                  onChangeText={(v) => { setPassword(v); clearError('password'); }}
-                  secureTextEntry={!showPassword}
-                  textContentType="newPassword"
-                  autoComplete="new-password"
-                  returnKeyType="next"
-                />
+                {/* Phone Number */}
+                <View>
+                  <View style={styles.inputWrapper}>
+                    <TextInput
+                      style={[styles.input, styles.inputWithLeadingIcon, errors.phone ? styles.inputError : null]}
+                      placeholder="Phone Number"
+                      placeholderTextColor={PLACEHOLDER}
+                      value={phone}
+                      onChangeText={(v) => { setPhone(v); clearError('phone'); }}
+                      keyboardType="phone-pad"
+                      textContentType="telephoneNumber"
+                      autoComplete="tel"
+                      returnKeyType="next"
+                    />
+                    <View style={styles.leadingIcon} pointerEvents="none">
+                      <Ionicons name="call-outline" size={20} color={PRIMARY} />
+                    </View>
+                  </View>
+                  {errors.phone && <Text style={styles.errorText}>{errors.phone}</Text>}
+                </View>
+
+                {/* Password */}
+                <View>
+                  <View style={styles.inputWrapper}>
+                    <TextInput
+                      style={[styles.input, styles.inputWithLeadingIcon, styles.inputWithIcon, errors.password ? styles.inputError : null]}
+                      placeholder="Password"
+                      placeholderTextColor={PLACEHOLDER}
+                      value={password}
+                      onChangeText={(v) => { setPassword(v); clearError('password'); }}
+                      secureTextEntry={!showPassword}
+                      textContentType="newPassword"
+                      autoComplete="new-password"
+                      returnKeyType="next"
+                    />
+                    <View style={styles.leadingIcon} pointerEvents="none">
+                      <Ionicons name="lock-closed-outline" size={20} color={PRIMARY} />
+                    </View>
+                    <TouchableOpacity
+                      style={styles.eyeIcon}
+                      onPress={() => setShowPassword(!showPassword)}
+                      activeOpacity={0.7}
+                      accessibilityRole="button"
+                      accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
+                    >
+                      <Ionicons
+                        name={showPassword ? 'eye-outline' : 'eye-off-outline'}
+                        size={20}
+                        color={PLACEHOLDER}
+                      />
+                    </TouchableOpacity>
+                  </View>
+                  {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
+                </View>
+
+                {/* Confirm Password */}
+                <View>
+                  <View style={styles.inputWrapper}>
+                    <TextInput
+                      style={[styles.input, styles.inputWithLeadingIcon, styles.inputWithIcon, errors.confirmPassword ? styles.inputError : null]}
+                      placeholder="Confirm Password"
+                      placeholderTextColor={PLACEHOLDER}
+                      value={confirmPassword}
+                      onChangeText={(v) => { setConfirmPassword(v); clearError('confirmPassword'); }}
+                      secureTextEntry={!showConfirm}
+                      textContentType="newPassword"
+                      autoComplete="new-password"
+                      returnKeyType="done"
+                      onSubmitEditing={handleContinue}
+                    />
+                    <View style={styles.leadingIcon} pointerEvents="none">
+                      <Ionicons name="lock-closed-outline" size={20} color={PRIMARY} />
+                    </View>
+                    <TouchableOpacity
+                      style={styles.eyeIcon}
+                      onPress={() => setShowConfirm(!showConfirm)}
+                      activeOpacity={0.7}
+                      accessibilityRole="button"
+                      accessibilityLabel={showConfirm ? 'Hide password' : 'Show password'}
+                    >
+                      <Ionicons
+                        name={showConfirm ? 'eye-outline' : 'eye-off-outline'}
+                        size={20}
+                        color={PLACEHOLDER}
+                      />
+                    </TouchableOpacity>
+                  </View>
+                  {errors.confirmPassword && <Text style={styles.errorText}>{errors.confirmPassword}</Text>}
+                </View>
+
+                {/* Continue Button */}
                 <TouchableOpacity
-                  style={styles.eyeIcon}
-                  onPress={() => setShowPassword(!showPassword)}
-                  activeOpacity={0.7}
+                  style={styles.continueBtn}
+                  onPress={handleContinue}
+                  activeOpacity={0.85}
                 >
-                  <Ionicons
-                    name={showPassword ? 'eye-outline' : 'eye-off-outline'}
-                    size={20}
-                    color={PLACEHOLDER}
-                  />
+                  <Text style={styles.continueBtnText}>Continue</Text>
+                </TouchableOpacity>
+
+                {/* Divider */}
+                <View style={styles.dividerRow}>
+                  <View style={styles.dividerLine} />
+                  <Text style={styles.dividerText}>or continue with</Text>
+                  <View style={styles.dividerLine} />
+                </View>
+
+                {/* Google Button */}
+                <TouchableOpacity
+                  style={styles.googleBtn}
+                  onPress={handleGoogleSignIn}
+                  activeOpacity={0.85}
+                >
+                  <GoogleIcon />
+                  <Text style={styles.googleBtnText}>Continue with google</Text>
                 </TouchableOpacity>
               </View>
-              {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
             </View>
 
-            {/* Confirm Password */}
-            <View>
-              <View style={styles.inputWrapper}>
-                <TextInput
-                  style={[styles.input, styles.inputWithIcon, errors.confirmPassword ? styles.inputError : null]}
-                  placeholder="Confirm Password"
-                  placeholderTextColor={PLACEHOLDER}
-                  value={confirmPassword}
-                  onChangeText={(v) => { setConfirmPassword(v); clearError('confirmPassword'); }}
-                  secureTextEntry={!showConfirm}
-                  textContentType="newPassword"
-                  autoComplete="new-password"
-                  returnKeyType="done"
-                  onSubmitEditing={handleContinue}
-                />
-                <TouchableOpacity
-                  style={styles.eyeIcon}
-                  onPress={() => setShowConfirm(!showConfirm)}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons
-                    name={showConfirm ? 'eye-outline' : 'eye-off-outline'}
-                    size={20}
-                    color={PLACEHOLDER}
-                  />
-                </TouchableOpacity>
-              </View>
-              {errors.confirmPassword && <Text style={styles.errorText}>{errors.confirmPassword}</Text>}
+            {/* Sign In band */}
+            <WaveDivider fill={PRIMARY_SOFT} style={styles.footerWave} />
+            <View style={[styles.signinRow, { paddingBottom: insets.bottom + 24 }]}>
+              <Text style={styles.signinText}>Already have an account? </Text>
+              <TouchableOpacity onPress={() => navigation.navigate('SignIn')}>
+                <Text style={styles.signinLink}>Sign In</Text>
+              </TouchableOpacity>
             </View>
-
-            {/* Continue Button */}
-            <TouchableOpacity
-              style={styles.continueBtn}
-              onPress={handleContinue}
-              activeOpacity={0.85}
-            >
-              <Text style={styles.continueBtnText}>Continue</Text>
-            </TouchableOpacity>
-
-            {/* Divider */}
-            <View style={styles.dividerRow}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>or</Text>
-              <View style={styles.dividerLine} />
-            </View>
-
-            {/* Google Button */}
-            <TouchableOpacity
-              style={styles.googleBtn}
-              onPress={handleGoogleSignIn}
-              activeOpacity={0.85}
-            >
-              <GoogleIcon />
-              <Text style={styles.googleBtnText}>Continue with google</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Sign In Link */}
-          <View style={styles.signinRow}>
-            <Text style={styles.signinText}>Already have an account? </Text>
-            <TouchableOpacity onPress={() => navigation.navigate('SignIn')}>
-              <Text style={styles.signinLink}>Sign In</Text>
-            </TouchableOpacity>
-          </View>
-        </ScrollView>
+          </ScrollView>
+        </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
-  );
-}
-
-// Pixel-perfect Google "G" logo — official brand colors via SVG
-function GoogleIcon() {
-  return (
-    <Svg width={24} height={24} viewBox="0 0 24 24">
-      <Defs>
-        <ClipPath id="googleClip">
-          <Rect width={24} height={24} rx={12} />
-        </ClipPath>
-      </Defs>
-      <G clipPath="url(#googleClip)">
-        {/* White background */}
-        <Rect width={24} height={24} rx={12} fill="#fff" />
-        {/* Blue — right side of G */}
-        <Path
-          d="M23.52 12.273c0-.851-.076-1.67-.218-2.455H12v4.642h6.458a5.52 5.52 0 0 1-2.394 3.622v3.01h3.878c2.269-2.088 3.578-5.165 3.578-8.82z"
-          fill="#4285F4"
-        />
-        {/* Green — bottom */}
-        <Path
-          d="M12 24c3.24 0 5.956-1.075 7.942-2.908l-3.878-3.01c-1.075.72-2.449 1.146-4.064 1.146-3.124 0-5.77-2.11-6.715-4.947H1.276v3.11A11.995 11.995 0 0 0 12 24z"
-          fill="#34A853"
-        />
-        {/* Yellow — bottom left */}
-        <Path
-          d="M5.285 14.281A7.223 7.223 0 0 1 4.909 12c0-.79.136-1.56.376-2.281V6.609H1.276A11.995 11.995 0 0 0 0 12c0 1.936.464 3.765 1.276 5.391l4.009-3.11z"
-          fill="#FBBC05"
-        />
-        {/* Red — top left */}
-        <Path
-          d="M12 4.773c1.762 0 3.344.605 4.588 1.794l3.442-3.442C17.951 1.19 15.235 0 12 0A11.995 11.995 0 0 0 1.276 6.609l4.009 3.11C6.23 6.883 8.876 4.773 12 4.773z"
-          fill="#EA4335"
-        />
-      </G>
-    </Svg>
   );
 }
 
@@ -264,21 +260,37 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: WHITE,
   },
+  shell: {
+    flex: 1,
+  },
+  shellWide: {
+    flexDirection: 'row',
+  },
+  formPane: {
+    flex: 1,
+  },
   scroll: {
     flexGrow: 1,
+  },
+  formColumn: {
+    flex: 1,
     paddingHorizontal: 28,
-    paddingTop: 48,
-    paddingBottom: 32,
+    paddingBottom: 8,
+  },
+  formColumnWide: {
+    width: '100%',
+    maxWidth: 460,
+    alignSelf: 'center',
   },
 
   // Heading
   heading: {
     fontFamily: FONT_EXTRABOLD,
     fontSize: 28,
-    color: TEXT,
+    color: PRIMARY,
     textAlign: 'center',
-    marginBottom: 36,
-    marginTop: 24,
+    marginBottom: 28,
+    marginTop: 20,
     lineHeight: 36,
   },
 
@@ -301,6 +313,9 @@ const styles = StyleSheet.create({
     backgroundColor: INPUT_BG,
     fontFamily: FONT_MEDIUM,
   },
+  inputWithLeadingIcon: {
+    paddingLeft: 52,
+  },
   inputWithIcon: {
     paddingRight: 50,
   },
@@ -313,6 +328,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 5,
     marginLeft: 14,
+  },
+  leadingIcon: {
+    position: 'absolute',
+    left: 20,
+    height: 58,
+    justifyContent: 'center',
   },
   eyeIcon: {
     position: 'absolute',
@@ -358,7 +379,7 @@ const styles = StyleSheet.create({
     fontFamily: FONT_MEDIUM,
     marginHorizontal: 12,
     color: PLACEHOLDER,
-    fontSize: 14,
+    fontSize: 13,
   },
 
   // Google button
@@ -381,11 +402,15 @@ const styles = StyleSheet.create({
   },
 
   // Sign in
+  footerWave: {
+    marginTop: 16,
+  },
   signinRow: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 32,
+    backgroundColor: PRIMARY_SOFT,
+    paddingTop: 10,
   },
   signinText: {
     fontFamily: FONT_REGULAR,

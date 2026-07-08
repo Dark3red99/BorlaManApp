@@ -6,7 +6,19 @@
       "Bash(npx tsc *)",
       "PowerShell(npx tsc --noEmit 2>$null)",
       "PowerShell(if \\($?\\) { \"TYPECHECK PASSED\" } else { \"TYPECHECK FAILED\" })",
-      "PowerShell(npx tsc --noEmit)"
+      "PowerShell(npx tsc --noEmit)",
+      "PowerShell(\\(Get-Item assets\\\\borla-flat-vector.svg\\).Length; Test-Path node_modules\\\\expo-asset; Test-Path node_modules\\\\expo-image; Test-Path node_modules\\\\react-native-svg-transformer)",
+      "Read(//c/Users/pc/AppData/Local/Temp/claude/c--Users-pc-BorlaManApp/39e01d35-de07-477e-9bbf-daf09c015ad9/scratchpad/proposed/screens/**)",
+      "Bash(true)",
+      "Bash(git -c core.safecrlf=false diff --no-index --src-prefix=a/ --dst-prefix=b/ screens/SignIn.tsx /c/Users/pc/AppData/Local/Temp/claude/c--Users-pc-BorlaManApp/39e01d35-de07-477e-9bbf-daf09c015ad9/scratchpad/proposed/screens/SignIn.tsx)",
+      "Bash(git -c core.safecrlf=false diff --no-index screens/Registration.tsx /c/Users/pc/AppData/Local/Temp/claude/c--Users-pc-BorlaManApp/39e01d35-de07-477e-9bbf-daf09c015ad9/scratchpad/proposed/screens/Registration.tsx)",
+      "Read(//c/Users/pc/AppData/Local/Temp/claude/c--Users-pc-BorlaManApp/39e01d35-de07-477e-9bbf-daf09c015ad9/scratchpad/proposed/**)",
+      "Bash(cp \"/c/Users/pc/AppData/Local/Temp/claude/c--Users-pc-BorlaManApp/39e01d35-de07-477e-9bbf-daf09c015ad9/scratchpad/proposed/proposed-changes.diff\" /c/Users/pc/BorlaManApp/proposed-auth-restyle.diff && echo copied)",
+      "Bash(command -v chromium-cli)",
+      "Bash(chromium-cli --help)"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\pc\\AppData\\Local\\Temp\\claude\\c--Users-pc-BorlaManApp\\39e01d35-de07-477e-9bbf-daf09c015ad9\\scratchpad\\proposed"
     ]
   }
 }

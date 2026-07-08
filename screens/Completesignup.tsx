@@ -11,6 +11,7 @@ import {
   StatusBar,
   Alert,
   ActivityIndicator,
+  useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,8 +19,11 @@ import type { RootStackScreenProps } from '../types/navigation';
 import { useAuth } from '../context/AuthContext';
 import { AuthError } from '../services/authService';
 import { validateEmail, validateRequired } from '../utils/validation';
+import AuthHero from '../components/AuthHero';
+import collectorsArt from '../assets/man-woman-pushing-bin.svg';
 
 const PRIMARY = '#059669';
+const PRIMARY_SOFT = '#ECFDF5';
 const TEXT = '#0F172A';
 const BORDER = '#D3E8DD';
 const ERROR = '#E53935';
@@ -30,12 +34,15 @@ const FONT_REGULAR = 'Poppins_400Regular';
 const FONT_MEDIUM = 'Poppins_500Medium';
 const FONT_BOLD = 'Poppins_700Bold';
 const FONT_EXTRABOLD = 'Poppins_800ExtraBold';
+const WIDE_BREAKPOINT = 768;
 
 type Errors = Partial<Record<'email' | 'region' | 'district' | 'address' | 'area', string>>;
 
 export default function CompleteSignUp({ navigation, route }: RootStackScreenProps<'CompleteSignUp'>) {
   const { draft, category } = route.params;
   const { register } = useAuth();
+  const { width } = useWindowDimensions();
+  const isWide = width >= WIDE_BREAKPOINT;
 
   const [email, setEmail] = useState('');
   const [region, setRegion] = useState('');
@@ -103,138 +110,166 @@ export default function CompleteSignUp({ navigation, route }: RootStackScreenPro
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="dark-content" backgroundColor={WHITE} />
+    <SafeAreaView style={styles.safe} edges={['bottom', 'left', 'right']}>
+      <StatusBar barStyle="dark-content" backgroundColor={PRIMARY_SOFT} />
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <ScrollView
-          contentContainerStyle={styles.scroll}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Heading */}
-          <Text style={styles.heading}>Complete your Sign Up</Text>
+        <View style={[styles.shell, isWide && styles.shellWide]}>
+          {/* Illustration header — top band on phones, left panel on wide screens */}
+          <AuthHero wide={isWide} asset={collectorsArt} artWidth={240} artHeight={160} />
 
-          {/* Form */}
-          <View style={styles.form}>
-            {/* Email */}
-            <View>
-              <View style={styles.inputWrapper}>
-                <TextInput
-                  style={[styles.input, errors.email ? styles.inputError : null]}
-                  placeholder="Email address"
-                  placeholderTextColor={PLACEHOLDER}
-                  value={email}
-                  onChangeText={(v) => { setEmail(v); clearError('email'); }}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  textContentType="emailAddress"
-                  autoComplete="email"
-                  returnKeyType="next"
-                />
+          <ScrollView
+            style={styles.formPane}
+            contentContainerStyle={styles.scroll}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={[styles.formColumn, isWide && styles.formColumnWide]}>
+              {/* Heading */}
+              <Text style={styles.heading}>Complete your Sign Up</Text>
+
+              {/* Form */}
+              <View style={styles.form}>
+                {/* Email */}
+                <View>
+                  <View style={styles.inputWrapper}>
+                    <TextInput
+                      style={[styles.input, styles.inputWithLeadingIcon, errors.email ? styles.inputError : null]}
+                      placeholder="Email address"
+                      placeholderTextColor={PLACEHOLDER}
+                      value={email}
+                      onChangeText={(v) => { setEmail(v); clearError('email'); }}
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                      textContentType="emailAddress"
+                      autoComplete="email"
+                      returnKeyType="next"
+                    />
+                    <View style={styles.leadingIcon} pointerEvents="none">
+                      <Ionicons name="mail-outline" size={20} color={PRIMARY} />
+                    </View>
+                  </View>
+                  {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
+                </View>
+
+                {/* Region */}
+                <View>
+                  <View style={styles.inputWrapper}>
+                    <TextInput
+                      style={[styles.input, styles.inputWithLeadingIcon, errors.region ? styles.inputError : null]}
+                      placeholder="Region"
+                      placeholderTextColor={PLACEHOLDER}
+                      value={region}
+                      onChangeText={(v) => { setRegion(v); clearError('region'); }}
+                      returnKeyType="next"
+                    />
+                    <View style={styles.leadingIcon} pointerEvents="none">
+                      <Ionicons name="map-outline" size={20} color={PRIMARY} />
+                    </View>
+                  </View>
+                  {errors.region && <Text style={styles.errorText}>{errors.region}</Text>}
+                </View>
+
+                {/* District */}
+                <View>
+                  <View style={styles.inputWrapper}>
+                    <TextInput
+                      style={[styles.input, styles.inputWithLeadingIcon, errors.district ? styles.inputError : null]}
+                      placeholder="District"
+                      placeholderTextColor={PLACEHOLDER}
+                      value={district}
+                      onChangeText={(v) => { setDistrict(v); clearError('district'); }}
+                      returnKeyType="next"
+                    />
+                    <View style={styles.leadingIcon} pointerEvents="none">
+                      <Ionicons name="business-outline" size={20} color={PRIMARY} />
+                    </View>
+                  </View>
+                  {errors.district && <Text style={styles.errorText}>{errors.district}</Text>}
+                </View>
+
+                {/* Address / House No. */}
+                <View>
+                  <View style={styles.inputWrapper}>
+                    <TextInput
+                      style={[styles.input, styles.inputWithLeadingIcon, errors.address ? styles.inputError : null]}
+                      placeholder="Address /House No."
+                      placeholderTextColor={PLACEHOLDER}
+                      value={address}
+                      onChangeText={(v) => { setAddress(v); clearError('address'); }}
+                      textContentType="fullStreetAddress"
+                      autoComplete="street-address"
+                      returnKeyType="next"
+                    />
+                    <View style={styles.leadingIcon} pointerEvents="none">
+                      <Ionicons name="home-outline" size={20} color={PRIMARY} />
+                    </View>
+                  </View>
+                  {errors.address && <Text style={styles.errorText}>{errors.address}</Text>}
+                </View>
+
+                {/* Area / Neighborhood */}
+                <View>
+                  <View style={styles.inputWrapper}>
+                    <TextInput
+                      style={[styles.input, styles.inputWithLeadingIcon, errors.area ? styles.inputError : null]}
+                      placeholder="Area/Neighborhood"
+                      placeholderTextColor={PLACEHOLDER}
+                      value={area}
+                      onChangeText={(v) => { setArea(v); clearError('area'); }}
+                      returnKeyType="next"
+                    />
+                    <View style={styles.leadingIcon} pointerEvents="none">
+                      <Ionicons name="navigate-outline" size={20} color={PRIMARY} />
+                    </View>
+                  </View>
+                  {errors.area && <Text style={styles.errorText}>{errors.area}</Text>}
+                </View>
+
+                {/* GPS Location */}
+                <View style={styles.inputWrapper}>
+                  <TextInput
+                    style={[styles.input, styles.inputWithLeadingIcon, styles.inputWithIcon]}
+                    placeholder="GPS location"
+                    placeholderTextColor={PLACEHOLDER}
+                    value={gps}
+                    onChangeText={setGps}
+                    returnKeyType="done"
+                    editable={false}
+                  />
+                  <View style={styles.leadingIcon} pointerEvents="none">
+                    <Ionicons name="locate-outline" size={20} color={PRIMARY} />
+                  </View>
+                  <TouchableOpacity
+                    style={styles.pinIcon}
+                    onPress={handleGPS}
+                    activeOpacity={0.7}
+                    accessibilityRole="button"
+                    accessibilityLabel="Use current location"
+                  >
+                    <Ionicons name="location" size={22} color={PLACEHOLDER} />
+                  </TouchableOpacity>
+                </View>
+
+                {/* Submit */}
+                <TouchableOpacity
+                  style={[styles.submitBtn, submitting && styles.submitBtnDisabled]}
+                  onPress={handleSubmit}
+                  activeOpacity={0.85}
+                  disabled={submitting}
+                >
+                  {submitting ? (
+                    <ActivityIndicator color={WHITE} />
+                  ) : (
+                    <Text style={styles.submitBtnText}>Submit</Text>
+                  )}
+                </TouchableOpacity>
               </View>
-              {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
             </View>
-
-            {/* Region */}
-            <View>
-              <View style={styles.inputWrapper}>
-                <TextInput
-                  style={[styles.input, errors.region ? styles.inputError : null]}
-                  placeholder="Region"
-                  placeholderTextColor={PLACEHOLDER}
-                  value={region}
-                  onChangeText={(v) => { setRegion(v); clearError('region'); }}
-                  returnKeyType="next"
-                />
-              </View>
-              {errors.region && <Text style={styles.errorText}>{errors.region}</Text>}
-            </View>
-
-            {/* District */}
-            <View>
-              <View style={styles.inputWrapper}>
-                <TextInput
-                  style={[styles.input, errors.district ? styles.inputError : null]}
-                  placeholder="District"
-                  placeholderTextColor={PLACEHOLDER}
-                  value={district}
-                  onChangeText={(v) => { setDistrict(v); clearError('district'); }}
-                  returnKeyType="next"
-                />
-              </View>
-              {errors.district && <Text style={styles.errorText}>{errors.district}</Text>}
-            </View>
-
-            {/* Address / House No. */}
-            <View>
-              <View style={styles.inputWrapper}>
-                <TextInput
-                  style={[styles.input, errors.address ? styles.inputError : null]}
-                  placeholder="Address /House No."
-                  placeholderTextColor={PLACEHOLDER}
-                  value={address}
-                  onChangeText={(v) => { setAddress(v); clearError('address'); }}
-                  textContentType="fullStreetAddress"
-                  autoComplete="street-address"
-                  returnKeyType="next"
-                />
-              </View>
-              {errors.address && <Text style={styles.errorText}>{errors.address}</Text>}
-            </View>
-
-            {/* Area / Neighborhood */}
-            <View>
-              <View style={styles.inputWrapper}>
-                <TextInput
-                  style={[styles.input, errors.area ? styles.inputError : null]}
-                  placeholder="Area/Neighborhood"
-                  placeholderTextColor={PLACEHOLDER}
-                  value={area}
-                  onChangeText={(v) => { setArea(v); clearError('area'); }}
-                  returnKeyType="next"
-                />
-              </View>
-              {errors.area && <Text style={styles.errorText}>{errors.area}</Text>}
-            </View>
-
-            {/* GPS Location */}
-            <View style={styles.inputWrapper}>
-              <TextInput
-                style={[styles.input, styles.inputWithIcon]}
-                placeholder="GPS location"
-                placeholderTextColor={PLACEHOLDER}
-                value={gps}
-                onChangeText={setGps}
-                returnKeyType="done"
-                editable={false}
-              />
-              <TouchableOpacity
-                style={styles.pinIcon}
-                onPress={handleGPS}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="location" size={22} color={PLACEHOLDER} />
-              </TouchableOpacity>
-            </View>
-
-            {/* Submit */}
-            <TouchableOpacity
-              style={[styles.submitBtn, submitting && styles.submitBtnDisabled]}
-              onPress={handleSubmit}
-              activeOpacity={0.85}
-              disabled={submitting}
-            >
-              {submitting ? (
-                <ActivityIndicator color={WHITE} />
-              ) : (
-                <Text style={styles.submitBtnText}>Submit</Text>
-              )}
-            </TouchableOpacity>
-          </View>
-        </ScrollView>
+          </ScrollView>
+        </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -245,21 +280,37 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: WHITE,
   },
+  shell: {
+    flex: 1,
+  },
+  shellWide: {
+    flexDirection: 'row',
+  },
+  formPane: {
+    flex: 1,
+  },
   scroll: {
     flexGrow: 1,
+  },
+  formColumn: {
+    flex: 1,
     paddingHorizontal: 28,
-    paddingTop: 48,
     paddingBottom: 40,
+  },
+  formColumnWide: {
+    width: '100%',
+    maxWidth: 460,
+    alignSelf: 'center',
   },
 
   // Heading
   heading: {
     fontFamily: FONT_EXTRABOLD,
     fontSize: 28,
-    color: TEXT,
+    color: PRIMARY,
     textAlign: 'center',
-    marginBottom: 32,
-    marginTop: 24,
+    marginBottom: 28,
+    marginTop: 20,
     lineHeight: 36,
   },
 
@@ -282,6 +333,9 @@ const styles = StyleSheet.create({
     backgroundColor: INPUT_BG,
     fontFamily: FONT_MEDIUM,
   },
+  inputWithLeadingIcon: {
+    paddingLeft: 52,
+  },
   inputWithIcon: {
     paddingRight: 52,
   },
@@ -294,6 +348,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 5,
     marginLeft: 14,
+  },
+  leadingIcon: {
+    position: 'absolute',
+    left: 20,
+    height: 58,
+    justifyContent: 'center',
   },
   pinIcon: {
     position: 'absolute',

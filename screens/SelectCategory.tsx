@@ -6,13 +6,17 @@ import {
   StyleSheet,
   ScrollView,
   StatusBar,
+  useWindowDimensions,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import type { RootStackScreenProps } from '../types/navigation';
 import type { UserCategory } from '../types/models';
+import AuthHero from '../components/AuthHero';
+import communityArt from '../assets/community-flat-vector.svg';
 
 const PRIMARY = '#059669';
+const PRIMARY_SOFT = '#ECFDF5';
 const TEXT = '#0F172A';
 const WHITE = '#FFFFFF';
 const CARD_DEFAULT_BG = '#FAFCFB';
@@ -22,6 +26,7 @@ const CARD_DEFAULT_BORDER = '#E7EFEA';
 const FONT_MEDIUM = 'Poppins_500Medium';
 const FONT_BOLD = 'Poppins_700Bold';
 const FONT_EXTRABOLD = 'Poppins_800ExtraBold';
+const WIDE_BREAKPOINT = 768;
 
 type Category = {
   id: UserCategory;
@@ -56,6 +61,9 @@ const CATEGORIES: Category[] = [
 ];
 
 export default function SelectCategory({ navigation, route }: RootStackScreenProps<'SelectCategory'>) {
+  const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const isWide = width >= WIDE_BREAKPOINT;
   const [selected, setSelected] = useState<UserCategory | null>(null);
 
   const handleContinue = () => {
@@ -65,63 +73,72 @@ export default function SelectCategory({ navigation, route }: RootStackScreenPro
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="dark-content" backgroundColor={WHITE} />
+    <SafeAreaView style={styles.safe} edges={['left', 'right']}>
+      <StatusBar barStyle="dark-content" backgroundColor={PRIMARY_SOFT} />
 
-      <ScrollView
-        contentContainerStyle={styles.scroll}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Heading */}
-        <Text style={styles.heading}>Select your category</Text>
+      <View style={[styles.shell, isWide && styles.shellWide]}>
+        {/* Illustration header — top band on phones, left panel on wide screens */}
+        <AuthHero wide={isWide} asset={communityArt} artWidth={260} artHeight={173} />
 
-        {/* Category Cards */}
-        <View style={styles.cardList}>
-          {CATEGORIES.map((cat) => {
-            const isSelected = selected === cat.id;
-            return (
-              <TouchableOpacity
-                key={cat.id}
-                style={[
-                  styles.card,
-                  isSelected && styles.cardSelected,
-                ]}
-                onPress={() => setSelected(cat.id)}
-                activeOpacity={0.8}
-              >
-                {/* Icon */}
-                <View style={[styles.iconBox, { backgroundColor: cat.iconBg }]}>
-                  {cat.icon}
-                </View>
+        <View style={styles.formPane}>
+          <ScrollView
+            contentContainerStyle={styles.scroll}
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={[styles.column, isWide && styles.columnWide]}>
+              {/* Heading */}
+              <Text style={styles.heading}>Select your category</Text>
 
-                {/* Text */}
-                <View style={styles.cardText}>
-                  <Text style={styles.cardLabel}>{cat.label}</Text>
-                  <Text style={styles.cardDesc}>{cat.description}</Text>
-                </View>
+              {/* Category Cards */}
+              <View style={styles.cardList}>
+                {CATEGORIES.map((cat) => {
+                  const isSelected = selected === cat.id;
+                  return (
+                    <TouchableOpacity
+                      key={cat.id}
+                      style={[
+                        styles.card,
+                        isSelected && styles.cardSelected,
+                      ]}
+                      onPress={() => setSelected(cat.id)}
+                      activeOpacity={0.8}
+                    >
+                      {/* Icon */}
+                      <View style={[styles.iconBox, { backgroundColor: cat.iconBg }]}>
+                        {cat.icon}
+                      </View>
 
-                {/* Checkbox */}
-                <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
-                  {isSelected && (
-                    <Ionicons name="checkmark" size={16} color={WHITE} />
-                  )}
-                </View>
-              </TouchableOpacity>
-            );
-          })}
+                      {/* Text */}
+                      <View style={styles.cardText}>
+                        <Text style={styles.cardLabel}>{cat.label}</Text>
+                        <Text style={styles.cardDesc}>{cat.description}</Text>
+                      </View>
+
+                      {/* Checkbox */}
+                      <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
+                        {isSelected && (
+                          <Ionicons name="checkmark" size={16} color={WHITE} />
+                        )}
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+          </ScrollView>
+
+          {/* Sticky Continue Button */}
+          <View style={[styles.footer, isWide && styles.footerWide, { paddingBottom: insets.bottom + 20 }]}>
+            <TouchableOpacity
+              style={[styles.continueBtn, !selected && styles.continueBtnDisabled]}
+              onPress={handleContinue}
+              activeOpacity={0.85}
+              disabled={!selected}
+            >
+              <Text style={styles.continueBtnText}>Continue</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </ScrollView>
-
-      {/* Sticky Continue Button */}
-      <View style={styles.footer}>
-        <TouchableOpacity
-          style={[styles.continueBtn, !selected && styles.continueBtnDisabled]}
-          onPress={handleContinue}
-          activeOpacity={0.85}
-          disabled={!selected}
-        >
-          <Text style={styles.continueBtnText}>Continue</Text>
-        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
@@ -132,18 +149,34 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: WHITE,
   },
+  shell: {
+    flex: 1,
+  },
+  shellWide: {
+    flexDirection: 'row',
+  },
+  formPane: {
+    flex: 1,
+  },
   scroll: {
     flexGrow: 1,
+  },
+  column: {
+    flex: 1,
     paddingHorizontal: 24,
-    paddingTop: 48,
     paddingBottom: 24,
+  },
+  columnWide: {
+    width: '100%',
+    maxWidth: 460,
+    alignSelf: 'center',
   },
 
   // Heading
   heading: {
     fontFamily: FONT_EXTRABOLD,
     fontSize: 28,
-    color: TEXT,
+    color: PRIMARY,
     textAlign: 'center',
     marginBottom: 32,
     marginTop: 24,
@@ -221,9 +254,13 @@ const styles = StyleSheet.create({
   // Footer
   footer: {
     paddingHorizontal: 24,
-    paddingBottom: 32,
     paddingTop: 12,
     backgroundColor: WHITE,
+  },
+  footerWide: {
+    width: '100%',
+    maxWidth: 460,
+    alignSelf: 'center',
   },
   continueBtn: {
     height: 58,
