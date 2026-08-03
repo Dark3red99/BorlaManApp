@@ -13,6 +13,7 @@ export const StorageKeys = {
   ratings: '@borlaman/ratings',
   recurring: '@borlaman/recurring', // standing weekly pickup plans
   quizResults: '@borlaman/quizResults', // Learn & Earn quiz standings
+  collectionPoints: '@borlaman/collectionPoints', // userId → saved CollectionPoint
 } as const;
 
 export async function readJson<T>(key: string, fallback: T): Promise<T> {

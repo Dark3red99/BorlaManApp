@@ -6,6 +6,16 @@ import type { GeoPoint } from '../types/models';
 
 const EARTH_RADIUS_KM = 6371;
 
+// MapLibre speaks [lng, lat]; the domain model speaks {latitude, longitude}.
+// Convert only at the map boundary so the two never mix.
+export function toLngLat(point: GeoPoint): [number, number] {
+  return [point.longitude, point.latitude];
+}
+
+export function fromLngLat([longitude, latitude]: [number, number]): GeoPoint {
+  return { latitude, longitude };
+}
+
 export function haversineKm(a: GeoPoint, b: GeoPoint): number {
   const toRad = (deg: number) => (deg * Math.PI) / 180;
   const dLat = toRad(b.latitude - a.latitude);

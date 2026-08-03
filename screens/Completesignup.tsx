@@ -20,7 +20,9 @@ import { useAuth } from '../context/AuthContext';
 import { AuthError } from '../services/authService';
 import { validateEmail, validateRequired } from '../utils/validation';
 import AuthHero from '../components/AuthHero';
+import SelectField from '../components/SelectField';
 import collectorsArt from '../assets/man-woman-pushing-bin.svg';
+import { GHANA_REGIONS, GHANA_DISTRICTS_BY_REGION } from '../constants/ghana';
 
 const PRIMARY = '#059669';
 const PRIMARY_SOFT = '#ECFDF5';
@@ -53,6 +55,8 @@ export default function CompleteSignUp({ navigation, route }: RootStackScreenPro
   const [errors, setErrors] = useState<Errors>({});
   const [submitting, setSubmitting] = useState(false);
 
+  const districtOptions = region ? GHANA_DISTRICTS_BY_REGION[region] ?? [] : [];
+
   const handleGPS = () => {
     // Hook into expo-location here (Phase 2, with the map picker)
     Alert.alert('GPS', 'GPS capture is coming with the map in the next phase.');
@@ -60,6 +64,21 @@ export default function CompleteSignUp({ navigation, route }: RootStackScreenPro
 
   const clearError = (field: keyof Errors) =>
     setErrors((prev) => (prev[field] ? { ...prev, [field]: undefined } : prev));
+
+  const handleRegionSelect = (value: string) => {
+    setRegion(value);
+    clearError('region');
+    // District belongs to the previous region — clear it so the picker
+    // can't submit a mismatched region/district pair.
+    if (district) {
+      setDistrict('');
+    }
+  };
+
+  const handleDistrictSelect = (value: string) => {
+    setDistrict(value);
+    clearError('district');
+  };
 
   const handleSubmit = async () => {
     const next: Errors = {
@@ -155,40 +174,26 @@ export default function CompleteSignUp({ navigation, route }: RootStackScreenPro
                 </View>
 
                 {/* Region */}
-                <View>
-                  <View style={styles.inputWrapper}>
-                    <TextInput
-                      style={[styles.input, styles.inputWithLeadingIcon, errors.region ? styles.inputError : null]}
-                      placeholder="Region"
-                      placeholderTextColor={PLACEHOLDER}
-                      value={region}
-                      onChangeText={(v) => { setRegion(v); clearError('region'); }}
-                      returnKeyType="next"
-                    />
-                    <View style={styles.leadingIcon} pointerEvents="none">
-                      <Ionicons name="map-outline" size={20} color={PRIMARY} />
-                    </View>
-                  </View>
-                  {errors.region && <Text style={styles.errorText}>{errors.region}</Text>}
-                </View>
+                <SelectField
+                  placeholder="Region"
+                  value={region}
+                  options={GHANA_REGIONS}
+                  onSelect={handleRegionSelect}
+                  icon="map-outline"
+                  error={errors.region}
+                />
 
                 {/* District */}
-                <View>
-                  <View style={styles.inputWrapper}>
-                    <TextInput
-                      style={[styles.input, styles.inputWithLeadingIcon, errors.district ? styles.inputError : null]}
-                      placeholder="District"
-                      placeholderTextColor={PLACEHOLDER}
-                      value={district}
-                      onChangeText={(v) => { setDistrict(v); clearError('district'); }}
-                      returnKeyType="next"
-                    />
-                    <View style={styles.leadingIcon} pointerEvents="none">
-                      <Ionicons name="business-outline" size={20} color={PRIMARY} />
-                    </View>
-                  </View>
-                  {errors.district && <Text style={styles.errorText}>{errors.district}</Text>}
-                </View>
+                <SelectField
+                  placeholder="District"
+                  value={district}
+                  options={districtOptions}
+                  onSelect={handleDistrictSelect}
+                  icon="business-outline"
+                  error={errors.district}
+                  disabled={!region}
+                  disabledHint="Select a region first"
+                />
 
                 {/* Address / House No. */}
                 <View>

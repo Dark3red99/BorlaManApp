@@ -22,6 +22,7 @@ import SelectCategory from './screens/SelectCategory';
 import CompleteSignUp from './screens/Completesignup';
 import RegistrationSuccess from './screens/RegistrationSuccess';
 import Dashboard from './screens/Dashboard';
+import SetCollectionPointScreen from './screens/location/SetCollectionPointScreen';
 import RequestPickupScreen from './screens/dispose/RequestPickupScreen';
 import TrackPickupScreen from './screens/dispose/TrackPickupScreen';
 import PickupCompleteScreen from './screens/dispose/PickupCompleteScreen';
@@ -66,6 +67,7 @@ export default function App() {
             <Stack.Screen name="CompleteSignUp" component={CompleteSignUp} />
             <Stack.Screen name="RegistrationSuccess" component={RegistrationSuccess} />
             <Stack.Screen name="Dashboard" component={Dashboard} />
+            <Stack.Screen name="SetCollectionPoint" component={SetCollectionPointScreen} />
             <Stack.Screen name="RequestPickup" component={RequestPickupScreen} />
             <Stack.Screen name="TrackPickup" component={TrackPickupScreen} />
             <Stack.Screen name="PickupComplete" component={PickupCompleteScreen} />

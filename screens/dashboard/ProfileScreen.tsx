@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useCallback, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, StatusBar, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useAuth } from '../../context/AuthContext';
-import type { UserCategory } from '../../types/models';
+import { getCollectionPoint } from '../../services/locationService';
+import type { CollectionPoint, UserCategory } from '../../types/models';
 
 const PRIMARY = '#059669';
 const PRIMARY_SOFT = '#ECFDF5';
@@ -28,6 +29,22 @@ const CATEGORY_LABELS: Record<UserCategory, string> = {
 export default function ProfileScreen() {
   const { user, signOut } = useAuth();
   const navigation = useNavigation();
+  const [collectionPoint, setCollectionPoint] = useState<CollectionPoint | null>(null);
+
+  // Reload on focus so the row reflects an edit made on SetCollectionPoint.
+  useFocusEffect(
+    useCallback(() => {
+      let cancelled = false;
+      if (user) {
+        getCollectionPoint(user.id).then((point) => {
+          if (!cancelled) setCollectionPoint(point);
+        });
+      }
+      return () => {
+        cancelled = true;
+      };
+    }, [user]),
+  );
 
   const handleSignOut = () => {
     Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
@@ -101,6 +118,26 @@ export default function ProfileScreen() {
             </View>
           ))}
         </View>
+
+        {/* Collection point */}
+        <TouchableOpacity
+          style={styles.collectionRow}
+          onPress={() => navigation.navigate('SetCollectionPoint')}
+          activeOpacity={0.8}
+        >
+          <View style={styles.detailIconBox}>
+            <Ionicons name="pin-outline" size={18} color={PRIMARY} />
+          </View>
+          <View style={styles.detailInfo}>
+            <Text style={styles.detailLabel}>Collection point</Text>
+            <Text style={styles.detailValue} numberOfLines={1}>
+              {collectionPoint
+                ? [collectionPoint.gpsText, collectionPoint.label].filter(Boolean).join(' — ')
+                : 'Not set — tap to set your pickup spot'}
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={MUTED} />
+        </TouchableOpacity>
 
         {/* Sign out */}
         <TouchableOpacity style={styles.signOutBtn} onPress={handleSignOut} activeOpacity={0.8}>
@@ -223,6 +260,23 @@ const styles = StyleSheet.create({
     fontFamily: FONT_MEDIUM,
     fontSize: 14,
     color: TEXT,
+  },
+
+  // Collection point
+  collectionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: WHITE,
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
   },
 
   // Sign out

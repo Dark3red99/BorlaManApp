@@ -19,6 +19,16 @@ export type Address = {
   gpsText?: string; // e.g. GhanaPostGPS code, once GPS capture exists
 };
 
+// The one saved spot where waste is collected (future GET/PUT /me/collection-point).
+// Set once via the map picker and reused on every request — never re-detected.
+export type CollectionPoint = {
+  point: GeoPoint;
+  label: string; // reverse-geocoded or user-edited, e.g. "Nii Boi Street, Lapaz"
+  gpsText?: string; // GhanaPostGPS digital address, when set that way (e.g. "GA-183-8164")
+  source: 'gps' | 'search' | 'pin' | 'digital-address'; // how the point was last positioned
+  updatedAt: string; // ISO timestamp
+};
+
 export type User = {
   id: string;
   fullName: string;

@@ -19,6 +19,7 @@ export type RootStackParamList = {
   CompleteSignUp: { draft: SignupDraft; category: UserCategory };
   RegistrationSuccess: { name: string };
   Dashboard: undefined;
+  SetCollectionPoint: undefined;
   RequestPickup: undefined;
   TrackPickup: { requestId: string };
   PickupComplete: { requestId: string };

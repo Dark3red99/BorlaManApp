@@ -1,0 +1,8 @@
+{
+  // Expo Tools 1.6.3 can't parse @maplibre/maplibre-react-native's plugin
+  // ("Unexpected token 'typeof'") and flags it INVALID_PLUGIN_IMPORT, but the
+  // real Expo CLI resolves it fine (`npx expo config --type introspect` exits 0
+  // and pluginHistory records the plugin applied). Re-enable after an extension
+  // update fixes the parser.
+  "expo.appManifest.pluginValidation": false
+}

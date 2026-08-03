@@ -15,7 +15,12 @@
       "Read(//c/Users/pc/AppData/Local/Temp/claude/c--Users-pc-BorlaManApp/39e01d35-de07-477e-9bbf-daf09c015ad9/scratchpad/proposed/**)",
       "Bash(cp \"/c/Users/pc/AppData/Local/Temp/claude/c--Users-pc-BorlaManApp/39e01d35-de07-477e-9bbf-daf09c015ad9/scratchpad/proposed/proposed-changes.diff\" /c/Users/pc/BorlaManApp/proposed-auth-restyle.diff && echo copied)",
       "Bash(command -v chromium-cli)",
-      "Bash(chromium-cli --help)"
+      "Bash(chromium-cli --help)",
+      "PowerShell(npx expo config --type introspect 2>&1)",
+      "PowerShell($zip = \"C:\\\\Users\\\\pc\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-pc-BorlaManApp\\\\c4dfa9fb-a0cd-4357-ad6e-02b390c4e9e4\\\\scratchpad\\\\ndk-r27b.zip\"; $ndkRoot = \"$env:LOCALAPPDATA\\\\Android\\\\Sdk\\\\ndk\"; New-Item -ItemType Directory -Force $ndkRoot | Out-Null; & \"C:\\\\Windows\\\\System32\\\\tar.exe\" -xf $zip -C $ndkRoot; Rename-Item \"$ndkRoot\\\\android-ndk-r27b\" \"$ndkRoot\\\\27.1.12297006\"; Get-Content \"$ndkRoot\\\\27.1.12297006\\\\source.properties\")",
+      "PowerShell($ndkRoot = \"$env:LOCALAPPDATA\\\\Android\\\\Sdk\\\\ndk\"; Rename-Item \"$ndkRoot\\\\android-ndk-r27b\" \"$ndkRoot\\\\27.1.12297006\"; Get-Content \"$ndkRoot\\\\27.1.12297006\\\\source.properties\")",
+      "PowerShell($ndkRoot = \"$env:LOCALAPPDATA\\\\Android\\\\Sdk\\\\ndk\"; Remove-Item \"$ndkRoot\\\\27.1.12297006\" -Recurse -Force -Confirm:$false; Rename-Item \"$ndkRoot\\\\android-ndk-r27b\" \"$ndkRoot\\\\27.1.12297006\"; Get-Content \"$ndkRoot\\\\27.1.12297006\\\\source.properties\")",
+      "PowerShell($env:JAVA_HOME = 'C:\\\\Program Files\\\\Android\\\\Android Studio\\\\jbr'; $env:ANDROID_HOME = \"$env:LOCALAPPDATA\\\\Android\\\\Sdk\"; $env:Path = \"$env:JAVA_HOME\\\\bin;$env:ANDROID_HOME\\\\platform-tools;$env:Path\"; npx expo run:android --device Pixel_8)"
     ],
     "additionalDirectories": [
       "C:\\Users\\pc\\AppData\\Local\\Temp\\claude\\c--Users-pc-BorlaManApp\\39e01d35-de07-477e-9bbf-daf09c015ad9\\scratchpad\\proposed"
