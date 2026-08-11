@@ -11,7 +11,7 @@ export function isMapTilerConfigured(): boolean {
   return MAPTILER_KEY !== '' && MAPTILER_KEY !== 'YOUR_MAPTILER_KEY_HERE';
 }
 
-export const MAP_STYLE_URL = `https://api.maptiler.com/maps/streets-v2/style.json?key=${MAPTILER_KEY}`;
+export const MAP_STYLE_URL = `https://api.maptiler.com/maps/streets-v4/style.json?key=${MAPTILER_KEY}`;
 
 // Kwame Nkrumah Circle, Accra — the fallback center when GPS is denied/unavailable.
 export const ACCRA_FALLBACK: GeoPoint = { latitude: 5.5717, longitude: -0.2107 };

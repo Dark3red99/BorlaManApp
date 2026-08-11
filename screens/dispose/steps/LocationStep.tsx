@@ -7,23 +7,33 @@ import {
   StyleSheet,
   ActivityIndicator,
   Keyboard,
+  type NativeSyntheticEvent,
 } from 'react-native';
-import MapView, { Region } from 'react-native-maps';
+import {
+  Camera,
+  Map as MapLibreMap,
+  UserLocation,
+  type CameraRef,
+  type ViewStateChangeEvent,
+} from '@maplibre/maplibre-react-native';
 import * as Location from 'expo-location';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
 import type { GeoPoint } from '../../../types/models';
 import type { PickupDraft } from '../RequestPickupScreen';
+import { toLngLat, fromLngLat } from '../../../utils/geo';
+import { MAP_STYLE_URL, isMapTilerConfigured } from '../../../constants/map';
 
 const PRIMARY = '#059669';
 const WHITE   = '#FFFFFF';
 const TEXT    = '#0F172A';
 const MUTED   = '#64748B';
 const BORDER  = '#DCE8E1';
+const AMBER_TEXT = '#92400E';
 
 // Kwame Nkrumah Circle, Accra — the fallback when GPS is unavailable/denied.
 const DEFAULT_CENTER: GeoPoint = { latitude: 5.5717, longitude: -0.2107 };
-const DEFAULT_DELTA = { latitudeDelta: 0.012, longitudeDelta: 0.012 };
+const DEFAULT_ZOOM = 16;
 
 type Props = {
   draft: PickupDraft;
@@ -31,7 +41,7 @@ type Props = {
 };
 
 export default function LocationStep({ draft, onChange }: Props) {
-  const mapRef = useRef<MapView>(null);
+  const cameraRef = useRef<CameraRef>(null);
   const addressEdited = useRef(draft.addressText.trim().length > 0);
   const [locating, setLocating] = useState(false);
   const [denied, setDenied] = useState(false);
@@ -59,8 +69,8 @@ export default function LocationStep({ draft, onChange }: Props) {
     }
   };
 
-  const onRegionChangeComplete = (region: Region) => {
-    const point = { latitude: region.latitude, longitude: region.longitude };
+  const onRegionDidChange = (e: NativeSyntheticEvent<ViewStateChangeEvent>) => {
+    const point = fromLngLat(e.nativeEvent.center as [number, number]);
     onChange({ location: point });
     fillAddressFrom(point);
   };
@@ -80,7 +90,7 @@ export default function LocationStep({ draft, onChange }: Props) {
       const point = { latitude: pos.coords.latitude, longitude: pos.coords.longitude };
       onChange({ location: point });
       fillAddressFrom(point);
-      mapRef.current?.animateToRegion({ ...point, ...DEFAULT_DELTA }, 600);
+      cameraRef.current?.flyTo({ center: toLngLat(point), zoom: DEFAULT_ZOOM, duration: 600 });
     } catch {
       setDenied(true);
     } finally {
@@ -91,17 +101,18 @@ export default function LocationStep({ draft, onChange }: Props) {
   return (
     <View style={styles.container}>
       <View style={styles.mapWrap}>
-        <MapView
-          ref={mapRef}
+        <MapLibreMap
           style={StyleSheet.absoluteFill}
-          initialRegion={{ ...center, ...DEFAULT_DELTA }}
-          onRegionChangeComplete={onRegionChangeComplete}
-          onPanDrag={() => Keyboard.dismiss()}
-          showsUserLocation
-          showsMyLocationButton={false}
-          toolbarEnabled={false}
+          mapStyle={MAP_STYLE_URL}
+          onRegionDidChange={onRegionDidChange}
+          onPress={() => Keyboard.dismiss()}
         >
-        </MapView>
+          <Camera
+            ref={cameraRef}
+            initialViewState={{ center: toLngLat(center), zoom: DEFAULT_ZOOM }}
+          />
+          <UserLocation />
+        </MapLibreMap>
 
         {/* Fixed center pin — drag the map underneath it */}
         <View pointerEvents="none" style={styles.pinWrap}>
@@ -121,6 +132,11 @@ export default function LocationStep({ draft, onChange }: Props) {
         </View>
       </View>
 
+      {!isMapTilerConfigured() && (
+        <Text style={styles.mapKeyHint}>
+          Map tiles need a MapTiler key (.env.local) — you can still drop the pin blind.
+        </Text>
+      )}
       {denied && (
         <Text style={styles.deniedText}>
           Location permission denied — drag the map to your spot instead.
@@ -154,6 +170,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     overflow: 'hidden',
     minHeight: 220,
+    backgroundColor: '#E2E8F0',
   },
   pinWrap: {
     ...StyleSheet.absoluteFillObject,
@@ -195,6 +212,12 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins_500Medium',
     fontSize: 11,
     color: WHITE,
+  },
+  mapKeyHint: {
+    fontFamily: 'Poppins_400Regular',
+    fontSize: 11,
+    color: AMBER_TEXT,
+    marginTop: 8,
   },
   deniedText: {
     fontFamily: 'Poppins_400Regular',
