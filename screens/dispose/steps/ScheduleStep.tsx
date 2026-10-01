@@ -195,18 +195,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   asapTitle: {
-    fontFamily: 'Poppins_600SemiBold',
+    fontFamily: 'PlusJakartaSans_600SemiBold',
     fontSize: 14,
     color: TEXT,
   },
   asapSub: {
-    fontFamily: 'Poppins_400Regular',
+    fontFamily: 'PlusJakartaSans_400Regular',
     fontSize: 11.5,
     color: MUTED,
     marginTop: 1,
   },
   sectionLabel: {
-    fontFamily: 'Poppins_600SemiBold',
+    fontFamily: 'PlusJakartaSans_600SemiBold',
     fontSize: 14,
     color: TEXT,
     marginTop: 10,
@@ -230,12 +230,12 @@ const styles = StyleSheet.create({
     backgroundColor: PRIMARY,
   },
   dayChipLabel: {
-    fontFamily: 'Poppins_600SemiBold',
+    fontFamily: 'PlusJakartaSans_600SemiBold',
     fontSize: 13,
     color: TEXT,
   },
   dayChipSub: {
-    fontFamily: 'Poppins_400Regular',
+    fontFamily: 'PlusJakartaSans_400Regular',
     fontSize: 11,
     color: MUTED,
     marginTop: 1,
@@ -258,7 +258,7 @@ const styles = StyleSheet.create({
     borderColor: '#E2E8F0',
   },
   slotLabel: {
-    fontFamily: 'Poppins_500Medium',
+    fontFamily: 'PlusJakartaSans_500Medium',
     fontSize: 13,
     color: TEXT,
   },

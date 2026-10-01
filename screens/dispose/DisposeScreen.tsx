@@ -1,30 +1,44 @@
 import React, { useCallback, useState } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
-  StatusBar,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, Text, StyleSheet } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import {
+  ArrowUpRight,
+  Banknote,
+  Camera,
+  ClipboardList,
+  Navigation,
+  Truck,
+  type LucideIcon,
+} from 'lucide-react-native';
 
 import { useAuth } from '../../context/AuthContext';
 import * as pickupService from '../../services/pickupService';
 import type { CollectionRequest } from '../../types/models';
 import { wasteMeta } from '../../constants/waste';
 import { REQUEST_STATUS_META } from '../../constants/requestStatus';
+import { Fonts, ICON_STROKE, Radius, type Palette } from '../../constants/theme';
+import { useTheme, useThemedStyles } from '../../context/ThemeContext';
+import {
+  Button,
+  Card,
+  IconTile,
+  ListRow,
+  Pill,
+  Screen,
+  ScreenHeader,
+  SectionHeader,
+  wasteIcon,
+} from '../../components/ui';
 
-const PRIMARY = '#059669';
-const PRIMARY_DARK = '#047857';
-const BG      = '#F3F8F5';
-const WHITE   = '#FFFFFF';
-const TEXT    = '#0F172A';
-const MUTED   = '#64748B';
+const PERKS: { icon: LucideIcon; label: string }[] = [
+  { icon: Camera, label: 'Snap a photo' },
+  { icon: Banknote, label: 'Price upfront' },
+  { icon: Navigation, label: 'Live tracking' },
+];
 
 export default function DisposeScreen({ navigation }: any) {
+  const { ui, soft } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const { user } = useAuth();
   const [active, setActive] = useState<CollectionRequest | null>(null);
   const [history, setHistory] = useState<CollectionRequest[]>([]);
@@ -56,308 +70,135 @@ export default function DisposeScreen({ navigation }: any) {
   const activeStatus = active ? REQUEST_STATUS_META[active.status] : null;
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
-      <StatusBar barStyle="dark-content" backgroundColor={BG} />
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <Text style={styles.title}>Dispose</Text>
-        <Text style={styles.subtitle}>Request an Aboboyaa pickup to your door</Text>
+    <Screen>
+      <ScreenHeader title="Dispose" subtitle="An aboboyaa pickup, right to your door" />
 
-        {active && activeStatus ? (
-          <TouchableOpacity
-            style={styles.activeCard}
-            activeOpacity={0.85}
+      {active && activeStatus ? (
+        <Card onPress={() => navigation.navigate('TrackPickup', { requestId: active.id })} accessibilityLabel="Track your pickup">
+          <View style={styles.rowBetween}>
+            <Text style={styles.eyebrow}>Pickup in progress</Text>
+            <Pill label={activeStatus.label} color={activeStatus.color} bg={soft(activeStatus.color, activeStatus.colorSoft)} dot />
+          </View>
+          <View style={styles.activeBody}>
+            <IconTile
+              icon={wasteIcon(active.wasteType)}
+              bg={soft(wasteMeta(active.wasteType).color, wasteMeta(active.wasteType).colorSoft)}
+              fg={wasteMeta(active.wasteType).color}
+              size={52}
+            />
+            <View style={styles.flex}>
+              <Text style={styles.activeTitle}>
+                {wasteMeta(active.wasteType).label} · {active.volumeKg} kg
+              </Text>
+              <Text style={styles.muted} numberOfLines={1}>{active.addressText}</Text>
+            </View>
+          </View>
+          <Button
+            label="Track pickup"
+            icon={ArrowUpRight}
+            size="sm"
+            style={styles.topGap}
             onPress={() => navigation.navigate('TrackPickup', { requestId: active.id })}
-          >
-            <View style={styles.activeTopRow}>
-              <Text style={styles.activeLabel}>Pickup in progress</Text>
-              <View style={[styles.statusBadge, { backgroundColor: 'rgba(255,255,255,0.22)' }]}>
-                <Text style={styles.statusBadgeTextLight}>{activeStatus.label}</Text>
-              </View>
+          />
+        </Card>
+      ) : (
+        <Card>
+          <View style={styles.ctaTop}>
+            <IconTile icon={Truck} tone="solid" size={56} round />
+            <View style={styles.flex}>
+              <Text style={styles.ctaTitle}>Request a pickup</Text>
+              <Text style={styles.muted}>A nearby collector comes to you.</Text>
             </View>
-            <View style={styles.activeBody}>
-              <View style={styles.activeIconBox}>
-                <MaterialCommunityIcons name={wasteMeta(active.wasteType).icon as any} size={26} color={WHITE} />
+          </View>
+
+          <View style={styles.perks}>
+            {PERKS.map(({ icon: Icon, label }) => (
+              <View key={label} style={styles.perk}>
+                <Icon size={18} color={ui.text} strokeWidth={ICON_STROKE} />
+                <Text style={styles.perkText}>{label}</Text>
               </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.activeWaste}>{wasteMeta(active.wasteType).label} • {active.volumeKg} kg</Text>
-                <Text style={styles.activeAddress} numberOfLines={1}>{active.addressText}</Text>
-              </View>
-              <View style={styles.trackBtn}>
-                <Text style={styles.trackBtnText}>Track</Text>
-                <Ionicons name="chevron-forward" size={14} color={PRIMARY_DARK} />
-              </View>
-            </View>
-          </TouchableOpacity>
+            ))}
+          </View>
+
+          <Button label="Start request" icon={ArrowUpRight} onPress={() => navigation.navigate('RequestPickup')} />
+        </Card>
+      )}
+
+      <SectionHeader title="Recent pickups" />
+      <Card style={styles.listCard}>
+        {history.length === 0 ? (
+          <View style={styles.empty}>
+            <IconTile icon={ClipboardList} tone="neutral" round />
+            <Text style={styles.emptyText}>No pickups yet. Completed requests will appear here.</Text>
+          </View>
         ) : (
-          <TouchableOpacity
-            style={styles.ctaCard}
-            activeOpacity={0.85}
-            onPress={() => navigation.navigate('RequestPickup')}
-          >
-            <View style={styles.ctaIconBox}>
-              <MaterialCommunityIcons name="truck-fast" size={30} color={WHITE} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.ctaTitle}>Request a Pickup</Text>
-              <Text style={styles.ctaSub}>Photos, location & price upfront — a collector comes to you</Text>
-            </View>
-            <View style={styles.ctaArrow}>
-              <Ionicons name="arrow-forward" size={20} color={PRIMARY_DARK} />
-            </View>
-          </TouchableOpacity>
+          history.map((item, idx) => {
+            const meta = wasteMeta(item.wasteType);
+            const status = REQUEST_STATUS_META[item.status];
+            return (
+              <ListRow
+                key={item.id}
+                left={<IconTile icon={wasteIcon(item.wasteType)} bg={soft(meta.color, meta.colorSoft)} fg={meta.color} size={42} />}
+                title={`${meta.label} · ${item.volumeKg} kg`}
+                subtitle={new Date(item.createdAt).toLocaleDateString('en-GB', {
+                  day: 'numeric',
+                  month: 'short',
+                  year: 'numeric',
+                })}
+                right={
+                  <View style={styles.historyRight}>
+                    <Text style={styles.price}>GH₵ {item.priceGhs.toFixed(2)}</Text>
+                    <Pill label={status.label} color={status.color} bg={soft(status.color, status.colorSoft)} />
+                  </View>
+                }
+                divider={idx < history.length - 1}
+              />
+            );
+          })
         )}
-
-        <View style={styles.historyCard}>
-          <Text style={styles.historyTitle}>Recent Pickups</Text>
-          {history.length === 0 ? (
-            <View style={styles.emptyBox}>
-              <MaterialCommunityIcons name="clipboard-text-clock-outline" size={28} color={MUTED} />
-              <Text style={styles.emptyText}>No pickups yet. Your completed requests will appear here.</Text>
-            </View>
-          ) : (
-            history.map((item, idx) => {
-              const meta = wasteMeta(item.wasteType);
-              const status = REQUEST_STATUS_META[item.status];
-              return (
-                <View
-                  key={item.id}
-                  style={[styles.historyRow, idx < history.length - 1 && styles.historyRowBorder]}
-                >
-                  <View style={[styles.historyIconBox, { backgroundColor: meta.colorSoft }]}>
-                    <MaterialCommunityIcons name={meta.icon as any} size={20} color={meta.color} />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.historyItemTitle}>
-                      {meta.label} • {item.volumeKg} kg
-                    </Text>
-                    <Text style={styles.historyItemSub}>
-                      {new Date(item.createdAt).toLocaleDateString('en-GB', {
-                        day: 'numeric', month: 'short', year: 'numeric',
-                      })}
-                    </Text>
-                  </View>
-                  <View style={{ alignItems: 'flex-end', gap: 4 }}>
-                    <Text style={styles.historyPrice}>GH₵ {item.priceGhs.toFixed(2)}</Text>
-                    <View style={[styles.statusBadge, { backgroundColor: status.colorSoft }]}>
-                      <Text style={[styles.statusBadgeText, { color: status.color }]}>{status.label}</Text>
-                    </View>
-                  </View>
-                </View>
-              );
-            })
-          )}
-        </View>
-
-        <View style={{ height: 8 }} />
-      </ScrollView>
-    </SafeAreaView>
+      </Card>
+    </Screen>
   );
 }
 
-const styles = StyleSheet.create({
-  safe: {
+const makeStyles = (ui: Palette) =>
+  StyleSheet.create({
+  flex: { flex: 1 },
+  topGap: { marginTop: 16 },
+  rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  eyebrow: { fontFamily: Fonts.medium, fontSize: 12.5, color: ui.textMuted },
+  muted: { fontFamily: Fonts.regular, fontSize: 13, color: ui.textMuted, marginTop: 2 },
+
+  // Active pickup
+  activeBody: { flexDirection: 'row', alignItems: 'center', gap: 14, marginTop: 16 },
+  activeTitle: { fontFamily: Fonts.semiBold, fontSize: 16, color: ui.text },
+
+  // Request CTA
+  ctaTop: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  ctaTitle: { fontFamily: Fonts.bold, fontSize: 19, color: ui.text, letterSpacing: -0.3 },
+  perks: { flexDirection: 'row', gap: 8, marginTop: 18, marginBottom: 16 },
+  perk: {
     flex: 1,
-    backgroundColor: BG,
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: ui.well,
+    borderRadius: Radius.md,
+    paddingVertical: 14,
+    paddingHorizontal: 4,
   },
-  scroll: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 16,
-  },
-  title: {
-    fontFamily: 'Poppins_800ExtraBold',
-    fontSize: 26,
-    color: TEXT,
-    lineHeight: 34,
-  },
-  subtitle: {
-    fontFamily: 'Poppins_400Regular',
-    fontSize: 13,
-    color: MUTED,
-    marginBottom: 18,
-  },
+  perkText: { fontFamily: Fonts.medium, fontSize: 11.5, color: ui.text, textAlign: 'center' },
 
-  // ── Active pickup card ──
-  activeCard: {
-    backgroundColor: PRIMARY,
-    borderRadius: 20,
-    padding: 18,
-    marginBottom: 16,
-    shadowColor: PRIMARY,
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 5,
-  },
-  activeTopRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 14,
-  },
-  activeLabel: {
-    fontFamily: 'Poppins_500Medium',
-    fontSize: 13,
-    color: WHITE,
-    opacity: 0.9,
-  },
-  activeBody: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  activeIconBox: {
-    width: 52,
-    height: 52,
-    borderRadius: 14,
-    backgroundColor: PRIMARY_DARK,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  activeWaste: {
-    fontFamily: 'Poppins_700Bold',
-    fontSize: 16,
-    color: WHITE,
-  },
-  activeAddress: {
-    fontFamily: 'Poppins_400Regular',
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.8)',
-    marginTop: 2,
-  },
-  trackBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: WHITE,
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    gap: 2,
-  },
-  trackBtnText: {
-    fontFamily: 'Poppins_600SemiBold',
-    fontSize: 12,
-    color: PRIMARY_DARK,
-  },
-
-  // ── Request CTA ──
-  ctaCard: {
-    backgroundColor: PRIMARY,
-    borderRadius: 20,
-    padding: 18,
-    marginBottom: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    shadowColor: PRIMARY,
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 5,
-  },
-  ctaIconBox: {
-    width: 56,
-    height: 56,
-    borderRadius: 14,
-    backgroundColor: PRIMARY_DARK,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  ctaTitle: {
-    fontFamily: 'Poppins_700Bold',
-    fontSize: 17,
-    color: WHITE,
-  },
-  ctaSub: {
-    fontFamily: 'Poppins_400Regular',
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.85)',
-    marginTop: 2,
-    lineHeight: 17,
-  },
-  ctaArrow: {
-    width: 38,
-    height: 38,
-    borderRadius: 10,
-    backgroundColor: WHITE,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  // ── History ──
-  historyCard: {
-    backgroundColor: WHITE,
-    borderRadius: 20,
-    padding: 18,
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 3,
-  },
-  historyTitle: {
-    fontFamily: 'Poppins_700Bold',
-    fontSize: 16,
-    color: TEXT,
-    marginBottom: 6,
-  },
-  emptyBox: {
-    alignItems: 'center',
-    paddingVertical: 24,
-    gap: 10,
-  },
+  // History
+  listCard: { paddingVertical: 4, paddingHorizontal: 16 },
+  historyRight: { alignItems: 'flex-end', gap: 6 },
+  price: { fontFamily: Fonts.semiBold, fontSize: 13.5, color: ui.text },
+  empty: { alignItems: 'center', gap: 12, paddingVertical: 22 },
   emptyText: {
-    fontFamily: 'Poppins_400Regular',
-    fontSize: 12,
-    color: MUTED,
+    fontFamily: Fonts.regular,
+    fontSize: 13,
+    color: ui.textMuted,
     textAlign: 'center',
-    lineHeight: 18,
-  },
-  historyRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: 12,
-  },
-  historyRowBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
-  },
-  historyIconBox: {
-    width: 42,
-    height: 42,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  historyItemTitle: {
-    fontFamily: 'Poppins_600SemiBold',
-    fontSize: 13,
-    color: TEXT,
-  },
-  historyItemSub: {
-    fontFamily: 'Poppins_400Regular',
-    fontSize: 11,
-    color: MUTED,
-    marginTop: 1,
-  },
-  historyPrice: {
-    fontFamily: 'Poppins_700Bold',
-    fontSize: 13,
-    color: TEXT,
-  },
-  statusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 20,
-  },
-  statusBadgeText: {
-    fontFamily: 'Poppins_600SemiBold',
-    fontSize: 10,
-  },
-  statusBadgeTextLight: {
-    fontFamily: 'Poppins_600SemiBold',
-    fontSize: 11,
-    color: '#CCFFCC',
+    lineHeight: 19,
+    maxWidth: 240,
   },
 });

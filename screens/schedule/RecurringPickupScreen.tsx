@@ -250,13 +250,13 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   title: {
-    fontFamily: 'Poppins_700Bold',
+    fontFamily: 'PlusJakartaSans_700Bold',
     fontSize: 18,
     color: TEXT,
     lineHeight: 24,
   },
   subtitle: {
-    fontFamily: 'Poppins_400Regular',
+    fontFamily: 'PlusJakartaSans_400Regular',
     fontSize: 11.5,
     color: MUTED,
   },
@@ -266,7 +266,7 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   sectionLabel: {
-    fontFamily: 'Poppins_600SemiBold',
+    fontFamily: 'PlusJakartaSans_600SemiBold',
     fontSize: 14,
     color: TEXT,
     marginTop: 14,
@@ -291,7 +291,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   typeChipLabel: {
-    fontFamily: 'Poppins_500Medium',
+    fontFamily: 'PlusJakartaSans_500Medium',
     fontSize: 13,
     color: TEXT,
   },
@@ -311,12 +311,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   sizeChipLabel: {
-    fontFamily: 'Poppins_600SemiBold',
+    fontFamily: 'PlusJakartaSans_600SemiBold',
     fontSize: 12.5,
     color: TEXT,
   },
   sizeChipHint: {
-    fontFamily: 'Poppins_400Regular',
+    fontFamily: 'PlusJakartaSans_400Regular',
     fontSize: 10,
     color: MUTED,
     marginTop: 1,
@@ -342,7 +342,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   weekChipLabel: {
-    fontFamily: 'Poppins_600SemiBold',
+    fontFamily: 'PlusJakartaSans_600SemiBold',
     fontSize: 12,
     color: TEXT,
   },
@@ -362,7 +362,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   slotLabel: {
-    fontFamily: 'Poppins_500Medium',
+    fontFamily: 'PlusJakartaSans_500Medium',
     fontSize: 13,
     color: TEXT,
   },
@@ -375,7 +375,7 @@ const styles = StyleSheet.create({
     borderColor: BORDER,
     paddingHorizontal: 14,
     paddingVertical: 10,
-    fontFamily: 'Poppins_400Regular',
+    fontFamily: 'PlusJakartaSans_400Regular',
     fontSize: 13,
     color: TEXT,
     minHeight: 52,
@@ -394,7 +394,7 @@ const styles = StyleSheet.create({
     marginTop: 18,
   },
   summaryText: {
-    fontFamily: 'Poppins_600SemiBold',
+    fontFamily: 'PlusJakartaSans_600SemiBold',
     fontSize: 12.5,
     color: '#047857',
     flex: 1,
@@ -424,7 +424,7 @@ const styles = StyleSheet.create({
     elevation: 0,
   },
   saveBtnText: {
-    fontFamily: 'Poppins_600SemiBold',
+    fontFamily: 'PlusJakartaSans_600SemiBold',
     fontSize: 15,
     color: WHITE,
   },

@@ -14,6 +14,7 @@ export const StorageKeys = {
   recurring: '@borlaman/recurring', // standing weekly pickup plans
   quizResults: '@borlaman/quizResults', // Learn & Earn quiz standings
   collectionPoints: '@borlaman/collectionPoints', // userId → saved CollectionPoint
+  themeMode: '@borlaman/themeMode', // 'system' | 'light' | 'dark'
 } as const;
 
 export async function readJson<T>(key: string, fallback: T): Promise<T> {

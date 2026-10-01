@@ -23,9 +23,9 @@ const CARD_DEFAULT_BG = '#FAFCFB';
 const CARD_SELECTED_BG = '#ECFDF5';
 const CARD_SELECTED_BORDER = '#059669';
 const CARD_DEFAULT_BORDER = '#E7EFEA';
-const FONT_MEDIUM = 'Poppins_500Medium';
-const FONT_BOLD = 'Poppins_700Bold';
-const FONT_EXTRABOLD = 'Poppins_800ExtraBold';
+const FONT_MEDIUM = 'PlusJakartaSans_500Medium';
+const FONT_BOLD = 'PlusJakartaSans_700Bold';
+const FONT_EXTRABOLD = 'PlusJakartaSans_800ExtraBold';
 const WIDE_BREAKPOINT = 768;
 
 type Category = {

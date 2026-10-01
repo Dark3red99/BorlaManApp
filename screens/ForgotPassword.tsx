@@ -29,10 +29,10 @@ const INPUT_BG = '#F4FAF7';
 const WHITE = '#FFFFFF';
 const PLACEHOLDER = '#93A8A0';
 const GRAY = '#5B6B63';
-const FONT_REGULAR = 'Poppins_400Regular';
-const FONT_MEDIUM = 'Poppins_500Medium';
-const FONT_BOLD = 'Poppins_700Bold';
-const FONT_EXTRABOLD = 'Poppins_800ExtraBold';
+const FONT_REGULAR = 'PlusJakartaSans_400Regular';
+const FONT_MEDIUM = 'PlusJakartaSans_500Medium';
+const FONT_BOLD = 'PlusJakartaSans_700Bold';
+const FONT_EXTRABOLD = 'PlusJakartaSans_800ExtraBold';
 const WIDE_BREAKPOINT = 768;
 
 type Step = 'phone' | 'otp' | 'reset';

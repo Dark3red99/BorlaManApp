@@ -1,32 +1,24 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, StatusBar, Alert } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { View, Text, StyleSheet, Alert, Switch } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { LogOut, Mail, MapPin, MapPinned, Moon, Phone, Smartphone } from 'lucide-react-native';
+
 import { useAuth } from '../../context/AuthContext';
 import { getCollectionPoint } from '../../services/locationService';
 import type { CollectionPoint, UserCategory } from '../../types/models';
-
-const PRIMARY = '#059669';
-const PRIMARY_SOFT = '#ECFDF5';
-const BG    = '#F3F8F5';
-const WHITE = '#FFFFFF';
-const TEXT  = '#0F172A';
-const MUTED = '#64748B';
-const DANGER = '#DC2626';
-
-const FONT_REGULAR   = 'Poppins_400Regular';
-const FONT_MEDIUM    = 'Poppins_500Medium';
-const FONT_SEMIBOLD  = 'Poppins_600SemiBold';
-const FONT_EXTRABOLD = 'Poppins_800ExtraBold';
+import { Fonts, type Palette } from '../../constants/theme';
+import { useTheme, useThemedStyles } from '../../context/ThemeContext';
+import { Avatar, Card, IconTile, ListRow, Pill, Screen, ScreenHeader, SectionHeader } from '../../components/ui';
 
 const CATEGORY_LABELS: Record<UserCategory, string> = {
   household: 'Household',
-  corporate: 'Corporate Organization',
-  aboboyaa: 'Aboboyaa Collector',
+  corporate: 'Corporate organization',
+  aboboyaa: 'Aboboyaa collector',
 };
 
 export default function ProfileScreen() {
+  const { ui, isDark, mode, setMode } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const { user, signOut } = useAuth();
   const navigation = useNavigation();
   const [collectionPoint, setCollectionPoint] = useState<CollectionPoint | null>(null);
@@ -47,260 +39,154 @@ export default function ProfileScreen() {
   );
 
   const handleSignOut = () => {
-    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
+    Alert.alert('Sign out', 'Are you sure you want to sign out?', [
       { text: 'Cancel', style: 'cancel' },
       {
-        text: 'Sign Out',
+        text: 'Sign out',
         style: 'destructive',
         onPress: async () => {
           try {
             await signOut();
             navigation.reset({ index: 0, routes: [{ name: 'SignIn' }] });
           } catch {
-            Alert.alert('Sign Out Failed', 'Something went wrong. Please try again.');
+            Alert.alert('Sign out failed', 'Something went wrong. Please try again.');
           }
         },
       },
     ]);
   };
 
-  const initials = (user?.fullName ?? '?')
-    .split(/\s+/)
-    .map((part) => part[0])
-    .slice(0, 2)
-    .join('')
-    .toUpperCase();
+  const address = user
+    ? [user.address.addressLine, user.address.area, user.address.district, user.address.region]
+        .filter(Boolean)
+        .join(', ')
+    : '—';
 
-  const rows = [
-    { icon: 'call-outline' as const, label: 'Phone', value: user?.phone ?? '—' },
-    { icon: 'mail-outline' as const, label: 'Email', value: user?.email ?? '—' },
-    {
-      icon: 'location-outline' as const,
-      label: 'Address',
-      value: user
-        ? [user.address.addressLine, user.address.area, user.address.district, user.address.region]
-            .filter(Boolean)
-            .join(', ')
-        : '—',
-    },
+  const details = [
+    { icon: Phone, label: 'Phone', value: user?.phone ?? '—' },
+    { icon: Mail, label: 'Email', value: user?.email ?? '—' },
+    { icon: MapPin, label: 'Address', value: address },
   ];
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
-      <StatusBar barStyle="dark-content" backgroundColor={BG} />
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <Text style={styles.title}>Profile</Text>
+    <Screen>
+      <ScreenHeader title="Profile" />
 
-        {/* Identity card */}
-        <View style={styles.identityCard}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{initials}</Text>
-          </View>
-          <Text style={styles.name}>{user?.fullName ?? 'Guest'}</Text>
-          {user && (
-            <View style={styles.categoryBadge}>
-              <Text style={styles.categoryText}>{CATEGORY_LABELS[user.category]}</Text>
-            </View>
-          )}
-        </View>
+      {/* Identity */}
+      <Card style={styles.identity}>
+        <Avatar name={user?.fullName} size={84} />
+        <Text style={styles.name}>{user?.fullName ?? 'Guest'}</Text>
+        {user && (
+          <Pill
+            label={CATEGORY_LABELS[user.category]}
+            color={ui.accentDeep}
+            bg={ui.accentSoft}
+            style={styles.centerSelf}
+          />
+        )}
+      </Card>
 
-        {/* Details */}
-        <View style={styles.detailCard}>
-          {rows.map((row, idx) => (
-            <View key={row.label} style={[styles.detailRow, idx < rows.length - 1 && styles.detailRowBorder]}>
-              <View style={styles.detailIconBox}>
-                <Ionicons name={row.icon} size={18} color={PRIMARY} />
-              </View>
-              <View style={styles.detailInfo}>
-                <Text style={styles.detailLabel}>{row.label}</Text>
-                <Text style={styles.detailValue}>{row.value}</Text>
-              </View>
-            </View>
-          ))}
-        </View>
+      {/* Details */}
+      <SectionHeader title="Contact details" />
+      <Card style={styles.listCard}>
+        {details.map((row, idx) => (
+          <ListRow
+            key={row.label}
+            left={<IconTile icon={row.icon} tone="neutral" size={40} round />}
+            title={row.value}
+            subtitle={row.label}
+            numberOfLines={1}
+            divider={idx < details.length - 1}
+          />
+        ))}
+      </Card>
 
-        {/* Collection point */}
-        <TouchableOpacity
-          style={styles.collectionRow}
+      {/* Collection point */}
+      <SectionHeader title="Pickup spot" />
+      <Card style={styles.listCard}>
+        <ListRow
+          left={<IconTile icon={MapPinned} tone="accent" size={40} round />}
+          title={
+            collectionPoint
+              ? [collectionPoint.gpsText, collectionPoint.label].filter(Boolean).join(' · ')
+              : 'Not set yet'
+          }
+          subtitle={collectionPoint ? 'Collection point' : 'Tap to set where collectors should meet you'}
+          chevron
           onPress={() => navigation.navigate('SetCollectionPoint')}
-          activeOpacity={0.8}
-        >
-          <View style={styles.detailIconBox}>
-            <Ionicons name="pin-outline" size={18} color={PRIMARY} />
-          </View>
-          <View style={styles.detailInfo}>
-            <Text style={styles.detailLabel}>Collection point</Text>
-            <Text style={styles.detailValue} numberOfLines={1}>
-              {collectionPoint
-                ? [collectionPoint.gpsText, collectionPoint.label].filter(Boolean).join(' — ')
-                : 'Not set — tap to set your pickup spot'}
-            </Text>
-          </View>
-          <Ionicons name="chevron-forward" size={18} color={MUTED} />
-        </TouchableOpacity>
+        />
+      </Card>
 
-        {/* Sign out */}
-        <TouchableOpacity style={styles.signOutBtn} onPress={handleSignOut} activeOpacity={0.8}>
-          <Ionicons name="log-out-outline" size={20} color={DANGER} />
-          <Text style={styles.signOutText}>Sign Out</Text>
-        </TouchableOpacity>
+      {/* Appearance */}
+      <SectionHeader title="Appearance" />
+      <Card style={styles.listCard}>
+        <ListRow
+          left={<IconTile icon={Moon} tone="neutral" size={40} round />}
+          title="Dark mode"
+          subtitle={mode === 'system' ? 'Following your phone' : isDark ? 'On' : 'Off'}
+          divider
+          right={
+            <Switch
+              value={isDark}
+              onValueChange={(on) => setMode(on ? 'dark' : 'light')}
+              trackColor={{ false: ui.wellStrong, true: ui.accent }}
+              thumbColor="#FFFFFF"
+              ios_backgroundColor={ui.wellStrong}
+              accessibilityLabel="Dark mode"
+            />
+          }
+        />
+        <ListRow
+          left={<IconTile icon={Smartphone} tone="neutral" size={40} round />}
+          title="Match phone setting"
+          subtitle="Switch automatically with your phone"
+          right={
+            <Switch
+              value={mode === 'system'}
+              onValueChange={(on) => setMode(on ? 'system' : isDark ? 'dark' : 'light')}
+              trackColor={{ false: ui.wellStrong, true: ui.accent }}
+              thumbColor="#FFFFFF"
+              ios_backgroundColor={ui.wellStrong}
+              accessibilityLabel="Match phone setting"
+            />
+          }
+        />
+      </Card>
 
-        <Text style={styles.footerNote}>
-          Payment methods, saved addresses and settings are coming soon.
-        </Text>
-      </ScrollView>
-    </SafeAreaView>
+      {/* Sign out */}
+      <Card style={styles.listCard}>
+        <ListRow
+          left={<IconTile icon={LogOut} tone="danger" size={40} round />}
+          title="Sign out"
+          onPress={handleSignOut}
+        />
+      </Card>
+
+      <Text style={styles.footerNote}>
+        Payment methods, saved addresses and settings are coming soon.
+      </Text>
+    </Screen>
   );
 }
 
-const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: BG,
-  },
-  scroll: {
-    flexGrow: 1,
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 24,
-  },
-  title: {
-    fontFamily: FONT_EXTRABOLD,
-    fontSize: 26,
-    color: TEXT,
-    marginBottom: 20,
-  },
-
-  // Identity
-  identityCard: {
-    alignItems: 'center',
-    backgroundColor: WHITE,
-    borderRadius: 20,
-    paddingVertical: 28,
-    paddingHorizontal: 20,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
-  },
-  avatar: {
-    width: 76,
-    height: 76,
-    borderRadius: 38,
-    backgroundColor: PRIMARY,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 14,
-  },
-  avatarText: {
-    fontFamily: FONT_EXTRABOLD,
-    fontSize: 26,
-    color: WHITE,
-  },
+const makeStyles = (ui: Palette) =>
+  StyleSheet.create({
+  identity: { alignItems: 'center', paddingVertical: 26 },
+  centerSelf: { alignSelf: 'center' },
   name: {
-    fontFamily: FONT_SEMIBOLD,
-    fontSize: 19,
-    color: TEXT,
+    fontFamily: Fonts.bold,
+    fontSize: 20,
+    color: ui.text,
+    letterSpacing: -0.3,
+    marginTop: 14,
     marginBottom: 8,
   },
-  categoryBadge: {
-    backgroundColor: PRIMARY_SOFT,
-    borderRadius: 20,
-    paddingHorizontal: 14,
-    paddingVertical: 5,
-  },
-  categoryText: {
-    fontFamily: FONT_SEMIBOLD,
-    fontSize: 12,
-    color: PRIMARY,
-  },
-
-  // Details
-  detailCard: {
-    backgroundColor: WHITE,
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
-  },
-  detailRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: 14,
-  },
-  detailRowBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#EDF4F0',
-  },
-  detailIconBox: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    backgroundColor: PRIMARY_SOFT,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  detailInfo: {
-    flex: 1,
-  },
-  detailLabel: {
-    fontFamily: FONT_REGULAR,
-    fontSize: 12,
-    color: MUTED,
-    marginBottom: 1,
-  },
-  detailValue: {
-    fontFamily: FONT_MEDIUM,
-    fontSize: 14,
-    color: TEXT,
-  },
-
-  // Collection point
-  collectionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: WHITE,
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
-  },
-
-  // Sign out
-  signOutBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: WHITE,
-    borderRadius: 18,
-    height: 54,
-    borderWidth: 1,
-    borderColor: '#FECACA',
-    marginBottom: 16,
-  },
-  signOutText: {
-    fontFamily: FONT_SEMIBOLD,
-    fontSize: 15,
-    color: DANGER,
-  },
+  listCard: { paddingVertical: 4, paddingHorizontal: 16 },
   footerNote: {
-    fontFamily: FONT_REGULAR,
+    fontFamily: Fonts.regular,
     fontSize: 12,
-    color: MUTED,
+    color: ui.textFaint,
     textAlign: 'center',
+    marginTop: 4,
   },
 });

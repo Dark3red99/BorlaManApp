@@ -193,12 +193,12 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   stepCount: {
-    fontFamily: 'Poppins_400Regular',
+    fontFamily: 'PlusJakartaSans_400Regular',
     fontSize: 11,
     color: MUTED,
   },
   stepTitle: {
-    fontFamily: 'Poppins_700Bold',
+    fontFamily: 'PlusJakartaSans_700Bold',
     fontSize: 18,
     color: TEXT,
     lineHeight: 24,
@@ -239,7 +239,7 @@ const styles = StyleSheet.create({
     elevation: 0,
   },
   nextBtnText: {
-    fontFamily: 'Poppins_600SemiBold',
+    fontFamily: 'PlusJakartaSans_600SemiBold',
     fontSize: 15,
     color: WHITE,
   },

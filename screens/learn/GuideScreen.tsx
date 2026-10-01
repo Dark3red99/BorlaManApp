@@ -128,12 +128,12 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   headerKicker: {
-    fontFamily: 'Poppins_400Regular',
+    fontFamily: 'PlusJakartaSans_400Regular',
     fontSize: 11,
     color: MUTED,
   },
   headerTitle: {
-    fontFamily: 'Poppins_700Bold',
+    fontFamily: 'PlusJakartaSans_700Bold',
     fontSize: 17,
     color: TEXT,
     lineHeight: 23,
@@ -162,7 +162,7 @@ const styles = StyleSheet.create({
   },
   heroText: {
     flex: 1,
-    fontFamily: 'Poppins_500Medium',
+    fontFamily: 'PlusJakartaSans_500Medium',
     fontSize: 12.5,
     color: WHITE,
     lineHeight: 19,
@@ -181,7 +181,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   cardTitle: {
-    fontFamily: 'Poppins_700Bold',
+    fontFamily: 'PlusJakartaSans_700Bold',
     fontSize: 15,
     color: TEXT,
     marginBottom: 10,
@@ -202,7 +202,7 @@ const styles = StyleSheet.create({
   },
   pointText: {
     flex: 1,
-    fontFamily: 'Poppins_400Regular',
+    fontFamily: 'PlusJakartaSans_400Regular',
     fontSize: 13,
     color: TEXT,
     lineHeight: 20,
@@ -218,7 +218,7 @@ const styles = StyleSheet.create({
   },
   tipText: {
     flex: 1,
-    fontFamily: 'Poppins_500Medium',
+    fontFamily: 'PlusJakartaSans_500Medium',
     fontSize: 12.5,
     lineHeight: 19,
   },
@@ -244,7 +244,7 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   quizBtnText: {
-    fontFamily: 'Poppins_600SemiBold',
+    fontFamily: 'PlusJakartaSans_600SemiBold',
     fontSize: 14,
     color: WHITE,
   },

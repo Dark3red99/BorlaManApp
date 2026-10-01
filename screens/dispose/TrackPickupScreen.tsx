@@ -18,7 +18,7 @@ import {
   Layer as MapLibreLayer,
   type CameraRef,
   type LngLatBounds,
-} from '@maplibre/maplibre-react-native';
+} from '../../components/map/MapLibre';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
 import * as pickupService from '../../services/pickupService';
@@ -341,13 +341,13 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   statusTitle: {
-    fontFamily: 'Poppins_700Bold',
+    fontFamily: 'PlusJakartaSans_700Bold',
     fontSize: 17,
     color: TEXT,
     lineHeight: 24,
   },
   statusSub: {
-    fontFamily: 'Poppins_400Regular',
+    fontFamily: 'PlusJakartaSans_400Regular',
     fontSize: 12.5,
     color: MUTED,
     marginTop: 1,
@@ -360,13 +360,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   etaValue: {
-    fontFamily: 'Poppins_800ExtraBold',
+    fontFamily: 'PlusJakartaSans_800ExtraBold',
     fontSize: 18,
     color: PRIMARY,
     lineHeight: 22,
   },
   etaUnit: {
-    fontFamily: 'Poppins_500Medium',
+    fontFamily: 'PlusJakartaSans_500Medium',
     fontSize: 10,
     color: PRIMARY_DARK,
   },
@@ -390,17 +390,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   avatarText: {
-    fontFamily: 'Poppins_700Bold',
+    fontFamily: 'PlusJakartaSans_700Bold',
     fontSize: 18,
     color: WHITE,
   },
   collectorName: {
-    fontFamily: 'Poppins_600SemiBold',
+    fontFamily: 'PlusJakartaSans_600SemiBold',
     fontSize: 14,
     color: TEXT,
   },
   collectorVehicle: {
-    fontFamily: 'Poppins_400Regular',
+    fontFamily: 'PlusJakartaSans_400Regular',
     fontSize: 11.5,
     color: MUTED,
     marginTop: 1,
@@ -415,12 +415,12 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
   },
   ratingText: {
-    fontFamily: 'Poppins_600SemiBold',
+    fontFamily: 'PlusJakartaSans_600SemiBold',
     fontSize: 12,
     color: TEXT,
   },
   distanceText: {
-    fontFamily: 'Poppins_500Medium',
+    fontFamily: 'PlusJakartaSans_500Medium',
     fontSize: 12,
     color: MUTED,
     marginTop: 10,
@@ -438,7 +438,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   cancelBtnText: {
-    fontFamily: 'Poppins_600SemiBold',
+    fontFamily: 'PlusJakartaSans_600SemiBold',
     fontSize: 13,
     color: '#DC2626',
   },

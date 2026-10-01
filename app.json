@@ -5,7 +5,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.borlaman.app"
@@ -46,7 +46,8 @@
           "photosPermission": "BorlaMan needs photo access so you can attach pictures of your waste to a pickup request.",
           "cameraPermission": "BorlaMan uses the camera so you can photograph your waste for a pickup request."
         }
-      ]
+      ],
+      "expo-status-bar"
     ]
   }
 }

@@ -53,13 +53,13 @@ const styles = StyleSheet.create({
     marginBottom: 18,
   },
   title: {
-    fontFamily: 'Poppins_700Bold',
+    fontFamily: 'PlusJakartaSans_700Bold',
     fontSize: 18,
     color: TEXT,
     marginBottom: 6,
   },
   text: {
-    fontFamily: 'Poppins_400Regular',
+    fontFamily: 'PlusJakartaSans_400Regular',
     fontSize: 13,
     color: MUTED,
     textAlign: 'center',

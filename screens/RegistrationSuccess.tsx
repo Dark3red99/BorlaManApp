@@ -170,7 +170,7 @@ export default function RegistrationSuccess({ navigation, route }: RootStackScre
       <StatusBar barStyle="dark-content" backgroundColor={WHITE} />
 
       {/* ── Confetti layer ── */}
-      <View pointerEvents="none" style={StyleSheet.absoluteFillObject}>
+      <View pointerEvents="none" style={StyleSheet.absoluteFill}>
         {CONFETTI.map((item) => <ConfettiPiece key={item.id} item={item} />)}
       </View>
 
@@ -282,7 +282,7 @@ const styles = StyleSheet.create({
 
   // Text
   heading: {
-    fontFamily: 'Poppins_800ExtraBold',
+    fontFamily: 'PlusJakartaSans_800ExtraBold',
     fontSize: 28,
     color: TEXT,
     textAlign: 'center',
@@ -290,7 +290,7 @@ const styles = StyleSheet.create({
     lineHeight: 36,
   },
   subHeading: {
-    fontFamily: 'Poppins_400Regular',
+    fontFamily: 'PlusJakartaSans_400Regular',
     fontSize: 15,
     color: '#5B6B63',
     textAlign: 'center',
@@ -298,7 +298,7 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   nameHighlight: {
-    fontFamily: 'Poppins_700Bold',
+    fontFamily: 'PlusJakartaSans_700Bold',
     color: PRIMARY,
   },
 
@@ -327,7 +327,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   infoText: {
-    fontFamily: 'Poppins_500Medium',
+    fontFamily: 'PlusJakartaSans_500Medium',
     fontSize: 14,
     color: TEXT,
   },
@@ -351,7 +351,7 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   dashBtnText: {
-    fontFamily: 'Poppins_700Bold',
+    fontFamily: 'PlusJakartaSans_700Bold',
     fontSize: 16,
     color: WHITE,
     letterSpacing: 0.2,

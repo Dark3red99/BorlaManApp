@@ -6,12 +6,12 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
 import {
   useFonts,
-  Poppins_400Regular,
-  Poppins_500Medium,
-  Poppins_600SemiBold,
-  Poppins_700Bold,
-  Poppins_800ExtraBold,
-} from '@expo-google-fonts/poppins';
+  PlusJakartaSans_400Regular,
+  PlusJakartaSans_500Medium,
+  PlusJakartaSans_600SemiBold,
+  PlusJakartaSans_700Bold,
+  PlusJakartaSans_800ExtraBold,
+} from '@expo-google-fonts/plus-jakarta-sans';
 
 import SplashScreen from './screens/SplashScreen';
 import Onboarding from './screens/Onboarding';
@@ -31,17 +31,18 @@ import GuideScreen from './screens/learn/GuideScreen';
 import QuizScreen from './screens/learn/QuizScreen';
 import { Colors } from './constants/theme';
 import { AuthProvider } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 import type { RootStackParamList } from './types/navigation';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function App() {
   const [fontsLoaded] = useFonts({
-    Poppins_400Regular,
-    Poppins_500Medium,
-    Poppins_600SemiBold,
-    Poppins_700Bold,
-    Poppins_800ExtraBold,
+    PlusJakartaSans_400Regular,
+    PlusJakartaSans_500Medium,
+    PlusJakartaSans_600SemiBold,
+    PlusJakartaSans_700Bold,
+    PlusJakartaSans_800ExtraBold,
   });
 
   if (!fontsLoaded) {
@@ -50,6 +51,7 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
+      <ThemeProvider>
       <AuthProvider>
         <NavigationContainer>
           <Stack.Navigator
@@ -78,6 +80,7 @@ export default function App() {
           <StatusBar style="light" />
         </NavigationContainer>
       </AuthProvider>
+      </ThemeProvider>
     </SafeAreaProvider>
   );
 }

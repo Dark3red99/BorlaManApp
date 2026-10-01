@@ -14,29 +14,15 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import { LogIn } from 'lucide-react-native';
 import type { RootStackScreenProps } from '../types/navigation';
 import { useAuth } from '../context/AuthContext';
 import { AuthError } from '../services/authService';
-import AuthHero from '../components/AuthHero';
 import GoogleIcon from '../components/GoogleIcon';
-import WaveDivider from '../components/WaveDivider';
+import { ScreenColors as D, Fonts } from '../constants/theme';
 
-const PRIMARY = '#059669';
-const PRIMARY_SOFT = '#ECFDF5';
-const TEXT = '#0F172A';
-const BORDER = '#D3E8DD';
-const ERROR = '#E53935';
-const INPUT_BG = '#F4FAF7';
-const GOOGLE_BTN_BG = '#F1F5F3';
-const GOOGLE_TEXT = '#3C4A43';
-const WHITE = '#FFFFFF';
-const PLACEHOLDER = '#93A8A0';
-const FONT_REGULAR = 'Poppins_400Regular';
-const FONT_MEDIUM = 'Poppins_500Medium';
-const FONT_SEMIBOLD = 'Poppins_600SemiBold';
-const FONT_BOLD = 'Poppins_700Bold';
-const FONT_EXTRABOLD = 'Poppins_800ExtraBold';
 const WIDE_BREAKPOINT = 768;
 
 export default function SignIn({ navigation }: RootStackScreenProps<'SignIn'>) {
@@ -80,26 +66,25 @@ export default function SignIn({ navigation }: RootStackScreenProps<'SignIn'>) {
   };
 
   return (
-    <SafeAreaView style={styles.safe} edges={['left', 'right']}>
-      <StatusBar barStyle="dark-content" backgroundColor={PRIMARY_SOFT} />
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
-        <View style={[styles.shell, isWide && styles.shellWide]}>
-          {/* Illustration header — top band on phones, left panel on wide screens */}
-          <AuthHero wide={isWide} />
-
+    <LinearGradient colors={[D.bgTop, D.bgBottom]} style={styles.gradient}>
+      <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
+        <StatusBar barStyle="dark-content" backgroundColor={D.bgTop} />
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
           <ScrollView
-            style={styles.formPane}
             contentContainerStyle={styles.scroll}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
-            {/* Center content */}
             <View style={[styles.center, isWide && styles.centerWide]}>
-              {/* Heading */}
+              {/* Badge + Heading */}
+              <View style={styles.badge}>
+                <LogIn color={D.neon} size={22} strokeWidth={2} />
+              </View>
               <Text style={styles.heading}>Welcome back</Text>
+              <Text style={styles.subheading}>Sign in to request your next pickup</Text>
 
               {/* Form */}
               <View style={styles.form}>
@@ -108,7 +93,7 @@ export default function SignIn({ navigation }: RootStackScreenProps<'SignIn'>) {
                   <TextInput
                     style={[styles.input, styles.inputWithLeadingIcon]}
                     placeholder="Email or phone number"
-                    placeholderTextColor={PLACEHOLDER}
+                    placeholderTextColor={D.textFaint}
                     value={identifier}
                     onChangeText={(v) => { setIdentifier(v); setError(null); }}
                     autoCapitalize="none"
@@ -118,7 +103,7 @@ export default function SignIn({ navigation }: RootStackScreenProps<'SignIn'>) {
                     returnKeyType="next"
                   />
                   <View style={styles.leadingIcon} pointerEvents="none">
-                    <Ionicons name="mail-outline" size={20} color={PRIMARY} />
+                    <Ionicons name="mail-outline" size={20} color={D.neon} />
                   </View>
                 </View>
 
@@ -127,7 +112,7 @@ export default function SignIn({ navigation }: RootStackScreenProps<'SignIn'>) {
                   <TextInput
                     style={[styles.input, styles.inputWithLeadingIcon, styles.inputWithIcon]}
                     placeholder="Password"
-                    placeholderTextColor={PLACEHOLDER}
+                    placeholderTextColor={D.textFaint}
                     value={password}
                     onChangeText={(v) => { setPassword(v); setError(null); }}
                     secureTextEntry={!showPassword}
@@ -137,7 +122,7 @@ export default function SignIn({ navigation }: RootStackScreenProps<'SignIn'>) {
                     onSubmitEditing={handleSignIn}
                   />
                   <View style={styles.leadingIcon} pointerEvents="none">
-                    <Ionicons name="lock-closed-outline" size={20} color={PRIMARY} />
+                    <Ionicons name="lock-closed-outline" size={20} color={D.neon} />
                   </View>
                   <TouchableOpacity
                     style={styles.eyeIcon}
@@ -149,7 +134,7 @@ export default function SignIn({ navigation }: RootStackScreenProps<'SignIn'>) {
                     <Ionicons
                       name={showPassword ? 'eye-outline' : 'eye-off-outline'}
                       size={20}
-                      color={PLACEHOLDER}
+                      color={D.textFaint}
                     />
                   </TouchableOpacity>
                 </View>
@@ -165,7 +150,7 @@ export default function SignIn({ navigation }: RootStackScreenProps<'SignIn'>) {
                   disabled={!canSubmit}
                 >
                   {submitting ? (
-                    <ActivityIndicator color={WHITE} />
+                    <ActivityIndicator color={D.ink} />
                   ) : (
                     <Text style={styles.signInBtnText}>Sign In</Text>
                   )}
@@ -197,81 +182,87 @@ export default function SignIn({ navigation }: RootStackScreenProps<'SignIn'>) {
                   <Text style={styles.googleBtnText}>Continue with google</Text>
                 </TouchableOpacity>
               </View>
-            </View>
 
-            {/* Bottom Sign Up band */}
-            <WaveDivider fill={PRIMARY_SOFT} />
-            <View style={[styles.footer, { paddingBottom: insets.bottom + 24 }]}>
-              <Text style={styles.footerText}>Don't have an account? </Text>
-              <TouchableOpacity onPress={() => navigation?.navigate('Registration')}>
-                <Text style={styles.signUpLink}>Sign Up</Text>
-              </TouchableOpacity>
+              {/* Sign Up */}
+              <View style={[styles.footer, { paddingBottom: insets.bottom + 8 }]}>
+                <Text style={styles.footerText}>Don't have an account? </Text>
+                <TouchableOpacity onPress={() => navigation?.navigate('Registration')}>
+                  <Text style={styles.signUpLink}>Sign Up</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </ScrollView>
-        </View>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
+  gradient: {
+    flex: 1,
+  },
   safe: {
-    flex: 1,
-    backgroundColor: WHITE,
-  },
-  shell: {
-    flex: 1,
-  },
-  shellWide: {
-    flexDirection: 'row',
-  },
-  formPane: {
     flex: 1,
   },
   scroll: {
     flexGrow: 1,
-  },
-
-  // Vertically centered block
-  center: {
-    flex: 1,
     justifyContent: 'center',
     paddingHorizontal: 28,
+    paddingVertical: 24,
+  },
+  center: {
+    width: '100%',
   },
   centerWide: {
-    width: '100%',
-    maxWidth: 460,
+    maxWidth: 420,
     alignSelf: 'center',
   },
 
-  // Heading
+  // Badge + Heading
+  badge: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: D.neonDim,
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'center',
+    marginBottom: 16,
+  },
   heading: {
-    fontFamily: FONT_EXTRABOLD,
-    fontSize: 30,
-    color: PRIMARY,
+    fontFamily: Fonts.extraBold,
+    fontSize: 26,
+    color: D.text,
     textAlign: 'center',
-    marginBottom: 32,
-    marginTop: 24,
+    marginBottom: 4,
+  },
+  subheading: {
+    fontFamily: Fonts.regular,
+    fontSize: 13,
+    color: D.textMuted,
+    textAlign: 'center',
+    marginBottom: 28,
   },
 
   // Form
   form: {
-    gap: 14,
+    gap: 16,
   },
   inputWrapper: {
     position: 'relative',
     justifyContent: 'center',
   },
   input: {
-    height: 58,
-    borderWidth: 1.5,
-    borderColor: BORDER,
-    borderRadius: 30,
+    height: 56,
+    borderWidth: 1,
+    borderColor: D.border,
+    borderRadius: 28,
     paddingHorizontal: 22,
     fontSize: 15,
-    color: TEXT,
-    backgroundColor: INPUT_BG,
-    fontFamily: FONT_MEDIUM,
+    color: D.text,
+    backgroundColor: '#EEF5F1',
+    fontFamily: Fonts.medium,
   },
   inputWithLeadingIcon: {
     paddingLeft: 52,
@@ -282,21 +273,21 @@ const styles = StyleSheet.create({
   leadingIcon: {
     position: 'absolute',
     left: 20,
-    height: 58,
+    height: 56,
     justifyContent: 'center',
   },
   eyeIcon: {
     position: 'absolute',
     right: 18,
-    height: 58,
+    height: 56,
     justifyContent: 'center',
     paddingHorizontal: 4,
   },
 
   // Error
   errorText: {
-    fontFamily: FONT_REGULAR,
-    color: ERROR,
+    fontFamily: Fonts.regular,
+    color: D.danger,
     fontSize: 13,
     textAlign: 'center',
     marginTop: -4,
@@ -304,24 +295,24 @@ const styles = StyleSheet.create({
 
   // Sign In button
   signInBtn: {
-    height: 58,
-    backgroundColor: PRIMARY,
-    borderRadius: 30,
+    height: 56,
+    backgroundColor: D.neon,
+    borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 4,
-    shadowColor: PRIMARY,
+    shadowColor: D.neon,
     shadowOpacity: 0.35,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 6 },
     elevation: 6,
   },
   signInBtnDisabled: {
-    opacity: 0.6,
+    opacity: 0.5,
   },
   signInBtnText: {
-    fontFamily: FONT_BOLD,
-    color: WHITE,
+    fontFamily: Fonts.bold,
+    color: D.ink,
     fontSize: 16,
     letterSpacing: 0.3,
   },
@@ -332,9 +323,9 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   forgotText: {
-    fontFamily: FONT_MEDIUM,
+    fontFamily: Fonts.medium,
     fontSize: 14,
-    color: PRIMARY,
+    color: D.neon,
   },
 
   // Divider
@@ -346,31 +337,31 @@ const styles = StyleSheet.create({
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: '#E1EDE6',
+    backgroundColor: D.border,
   },
   dividerText: {
-    fontFamily: FONT_MEDIUM,
+    fontFamily: Fonts.medium,
     marginHorizontal: 12,
-    color: PLACEHOLDER,
+    color: D.textFaint,
     fontSize: 13,
   },
 
   // Google button
   googleBtn: {
-    height: 58,
-    backgroundColor: GOOGLE_BTN_BG,
-    borderRadius: 30,
+    height: 56,
+    backgroundColor: D.card,
+    borderRadius: 28,
     borderWidth: 1,
-    borderColor: '#E2EAE6',
+    borderColor: D.border,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 12,
   },
   googleBtnText: {
-    fontFamily: FONT_SEMIBOLD,
+    fontFamily: Fonts.semiBold,
     fontSize: 15,
-    color: GOOGLE_TEXT,
+    color: D.text,
     letterSpacing: 0.2,
   },
 
@@ -379,17 +370,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: PRIMARY_SOFT,
-    paddingTop: 10,
+    marginTop: 24,
   },
   footerText: {
-    fontFamily: FONT_REGULAR,
+    fontFamily: Fonts.regular,
     fontSize: 14,
-    color: '#5B6B63',
+    color: D.textMuted,
   },
   signUpLink: {
-    fontFamily: FONT_EXTRABOLD,
+    fontFamily: Fonts.extraBold,
     fontSize: 14,
-    color: PRIMARY,
+    color: D.neon,
   },
 });

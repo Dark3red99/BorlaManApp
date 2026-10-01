@@ -1,80 +1,73 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Pressable, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { createBottomTabNavigator, BottomTabBarProps } from '@react-navigation/bottom-tabs';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { CalendarDays, GraduationCap, House, Trash2, UserRound, type LucideIcon } from 'lucide-react-native';
 
 import HomeScreen from './dashboard/HomeScreen';
 import ScheduleScreen from './dashboard/ScheduleScreen';
 import ProfileScreen from './dashboard/ProfileScreen';
 import DisposeScreen from './dispose/DisposeScreen';
 import LearnEarnScreen from './learn/LearnEarnScreen';
+import { Elevation, ICON_STROKE, type Palette } from '../constants/theme';
+import { useTheme, useThemedStyles } from '../context/ThemeContext';
 
-const PRIMARY = '#059669';
-const WHITE   = '#FFFFFF';
-const MUTED   = '#64748B';
-
-type TabMeta = {
-  label: string;
-  center?: boolean;
-  icon: (active: boolean) => React.ReactNode;
-};
+type TabMeta = { label: string; icon: LucideIcon; center?: boolean };
 
 const TAB_META: Record<string, TabMeta> = {
-  Home: {
-    label: 'Home',
-    icon: (a) => <MaterialCommunityIcons name={a ? 'home-variant' : 'home-variant-outline'} size={23} color={a ? PRIMARY : MUTED} />,
-  },
-  Schedule: {
-    label: 'Schedule',
-    icon: (a) => <Ionicons name={a ? 'calendar' : 'calendar-outline'} size={22} color={a ? PRIMARY : MUTED} />,
-  },
-  Dispose: {
-    label: 'Dispose',
-    center: true,
-    icon: () => <MaterialCommunityIcons name="trash-can" size={26} color={WHITE} />,
-  },
-  LearnEarn: {
-    label: 'Learn & Earn',
-    icon: (a) => <Ionicons name={a ? 'school' : 'school-outline'} size={22} color={a ? PRIMARY : MUTED} />,
-  },
-  Profile: {
-    label: 'Profile',
-    icon: (a) => <Ionicons name={a ? 'person' : 'person-outline'} size={22} color={a ? PRIMARY : MUTED} />,
-  },
+  Home: { label: 'Home', icon: House },
+  Schedule: { label: 'Schedule', icon: CalendarDays },
+  Dispose: { label: 'Dispose waste', icon: Trash2, center: true },
+  LearnEarn: { label: 'Learn and earn', icon: GraduationCap },
+  Profile: { label: 'Profile', icon: UserRound },
 };
 
-function CustomTabBar({ state, navigation }: BottomTabBarProps) {
+/** Floating dock: icon-only tabs, the active one sits in a soft emerald disc. */
+function DockTabBar({ state, navigation }: BottomTabBarProps) {
+  const { ui, soft } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const insets = useSafeAreaInsets();
 
   return (
-    <View style={[styles.tabBar, { paddingBottom: Math.max(insets.bottom, 10) }]}>
-      {state.routes.map((route, index) => {
-        const meta = TAB_META[route.name];
-        const isFocused = state.index === index;
+    <View style={[styles.outer, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+      <View style={styles.dock}>
+        {state.routes.map((route, index) => {
+          const meta = TAB_META[route.name];
+          const focused = state.index === index;
+          const Icon = meta.icon;
 
-        const onPress = () => {
-          const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
-          if (!isFocused && !event.defaultPrevented) {
-            navigation.navigate(route.name);
-          }
-        };
+          const onPress = () => {
+            const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
+            if (!focused && !event.defaultPrevented) navigation.navigate(route.name);
+          };
 
-        if (meta.center) {
           return (
-            <TouchableOpacity key={route.key} style={styles.centerTab} onPress={onPress} activeOpacity={0.85}>
-              <View style={styles.centerTabIcon}>{meta.icon(isFocused)}</View>
-            </TouchableOpacity>
+            <Pressable
+              key={route.key}
+              onPress={onPress}
+              style={styles.slot}
+              accessibilityRole="tab"
+              accessibilityLabel={meta.label}
+              accessibilityState={{ selected: focused }}
+              hitSlop={4}
+            >
+              {meta.center ? (
+                <View style={styles.centerBtn}>
+                  <Icon size={24} color={ui.onAccent} strokeWidth={2} />
+                </View>
+              ) : (
+                <View style={[styles.disc, focused && styles.discActive]}>
+                  <Icon
+                    size={22}
+                    color={focused ? ui.accent : ui.textMuted}
+                    strokeWidth={focused ? ICON_STROKE + 0.35 : ICON_STROKE}
+                  />
+                </View>
+              )}
+            </Pressable>
           );
-        }
-
-        return (
-          <TouchableOpacity key={route.key} style={styles.tabItem} onPress={onPress} activeOpacity={0.7}>
-            {meta.icon(isFocused)}
-            <Text style={[styles.tabLabel, isFocused && styles.tabLabelActive]}>{meta.label}</Text>
-          </TouchableOpacity>
-        );
-      })}
+        })}
+      </View>
     </View>
   );
 }
@@ -82,12 +75,14 @@ function CustomTabBar({ state, navigation }: BottomTabBarProps) {
 const Tab = createBottomTabNavigator();
 
 export default function Dashboard() {
+  const { ui, soft } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   return (
     <Tab.Navigator
       id={undefined}
       initialRouteName="Home"
-      screenOptions={{ headerShown: false }}
-      tabBar={(props) => <CustomTabBar {...props} />}
+      screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: ui.bg } }}
+      tabBar={(props) => <DockTabBar {...props} />}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Schedule" component={ScheduleScreen} />
@@ -98,54 +93,45 @@ export default function Dashboard() {
   );
 }
 
-const styles = StyleSheet.create({
-  tabBar: {
+const makeStyles = (ui: Palette) =>
+  StyleSheet.create({
+  outer: {
+    backgroundColor: ui.bg,
+    paddingHorizontal: 20,
+    paddingTop: 6,
+  },
+  dock: {
     flexDirection: 'row',
-    backgroundColor: WHITE,
-    borderTopWidth: 1,
-    borderTopColor: '#EBEBEB',
-    paddingTop: 8,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: -3 },
-    elevation: 10,
+    justifyContent: 'space-between',
+    height: 68,
+    paddingHorizontal: 10,
+    borderRadius: 34,
+    backgroundColor: ui.surface,
+    ...Elevation.float,
   },
-  tabItem: {
+  slot: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 3,
   },
-  tabLabel: {
-    fontFamily: 'Poppins_400Regular',
-    fontSize: 10,
-    color: MUTED,
-  },
-  tabLabelActive: {
-    fontFamily: 'Poppins_600SemiBold',
-    color: PRIMARY,
-  },
-  centerTab: {
-    flex: 1,
+  disc: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: -22,
   },
-  centerTabIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: PRIMARY,
+  discActive: {
+    backgroundColor: ui.accentSoft,
+  },
+  centerBtn: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: ui.accent,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: PRIMARY,
-    shadowOpacity: 0.45,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 8,
-    borderWidth: 3,
-    borderColor: WHITE,
+    ...Elevation.accent,
   },
 });

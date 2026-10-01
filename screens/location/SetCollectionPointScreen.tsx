@@ -16,7 +16,7 @@ import {
   Map as MapLibreMap,
   type CameraRef,
   type ViewStateChangeEvent,
-} from '@maplibre/maplibre-react-native';
+} from '../../components/map/MapLibre';
 import * as Location from 'expo-location';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -44,10 +44,10 @@ const BORDER = '#DCE8E1';
 const AMBER_BG = '#FEF3C7';
 const AMBER_TEXT = '#92400E';
 
-const FONT_REGULAR = 'Poppins_400Regular';
-const FONT_MEDIUM = 'Poppins_500Medium';
-const FONT_SEMIBOLD = 'Poppins_600SemiBold';
-const FONT_EXTRABOLD = 'Poppins_800ExtraBold';
+const FONT_REGULAR = 'PlusJakartaSans_400Regular';
+const FONT_MEDIUM = 'PlusJakartaSans_500Medium';
+const FONT_SEMIBOLD = 'PlusJakartaSans_600SemiBold';
+const FONT_EXTRABOLD = 'PlusJakartaSans_800ExtraBold';
 
 const PIN_ZOOM = 16;
 const SEARCH_ZOOM = 17;
@@ -527,7 +527,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#E2E8F0',
   },
   mapLoading: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 10,
@@ -538,7 +538,7 @@ const styles = StyleSheet.create({
     color: MUTED,
   },
   pinWrap: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -145,12 +145,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   rowLabel: {
-    fontFamily: 'Poppins_400Regular',
+    fontFamily: 'PlusJakartaSans_400Regular',
     fontSize: 11,
     color: MUTED,
   },
   rowValue: {
-    fontFamily: 'Poppins_600SemiBold',
+    fontFamily: 'PlusJakartaSans_600SemiBold',
     fontSize: 13.5,
     color: TEXT,
     lineHeight: 19,
@@ -168,7 +168,7 @@ const styles = StyleSheet.create({
 
   // ── Price ──
   priceTitle: {
-    fontFamily: 'Poppins_700Bold',
+    fontFamily: 'PlusJakartaSans_700Bold',
     fontSize: 15,
     color: TEXT,
     marginBottom: 10,
@@ -180,7 +180,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   quoteLoadingText: {
-    fontFamily: 'Poppins_400Regular',
+    fontFamily: 'PlusJakartaSans_400Regular',
     fontSize: 13,
     color: MUTED,
   },
@@ -190,12 +190,12 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
   },
   priceLineLabel: {
-    fontFamily: 'Poppins_400Regular',
+    fontFamily: 'PlusJakartaSans_400Regular',
     fontSize: 13,
     color: MUTED,
   },
   priceLineValue: {
-    fontFamily: 'Poppins_500Medium',
+    fontFamily: 'PlusJakartaSans_500Medium',
     fontSize: 13,
     color: TEXT,
   },
@@ -208,17 +208,17 @@ const styles = StyleSheet.create({
     paddingTop: 10,
   },
   totalLabel: {
-    fontFamily: 'Poppins_700Bold',
+    fontFamily: 'PlusJakartaSans_700Bold',
     fontSize: 15,
     color: TEXT,
   },
   totalValue: {
-    fontFamily: 'Poppins_800ExtraBold',
+    fontFamily: 'PlusJakartaSans_800ExtraBold',
     fontSize: 17,
     color: PRIMARY,
   },
   priceNote: {
-    fontFamily: 'Poppins_400Regular',
+    fontFamily: 'PlusJakartaSans_400Regular',
     fontSize: 11,
     color: MUTED,
     marginTop: 8,

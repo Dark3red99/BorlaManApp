@@ -244,12 +244,12 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   successTitle: {
-    fontFamily: 'Poppins_800ExtraBold',
+    fontFamily: 'PlusJakartaSans_800ExtraBold',
     fontSize: 22,
     color: TEXT,
   },
   successSub: {
-    fontFamily: 'Poppins_400Regular',
+    fontFamily: 'PlusJakartaSans_400Regular',
     fontSize: 13,
     color: MUTED,
     marginTop: 2,
@@ -265,7 +265,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   pointsText: {
-    fontFamily: 'Poppins_600SemiBold',
+    fontFamily: 'PlusJakartaSans_600SemiBold',
     fontSize: 12,
     color: '#047857',
   },
@@ -283,7 +283,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   cardTitle: {
-    fontFamily: 'Poppins_700Bold',
+    fontFamily: 'PlusJakartaSans_700Bold',
     fontSize: 15,
     color: TEXT,
     marginBottom: 10,
@@ -295,12 +295,12 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
   },
   receiptLabel: {
-    fontFamily: 'Poppins_400Regular',
+    fontFamily: 'PlusJakartaSans_400Regular',
     fontSize: 13,
     color: MUTED,
   },
   receiptValue: {
-    fontFamily: 'Poppins_500Medium',
+    fontFamily: 'PlusJakartaSans_500Medium',
     fontSize: 13,
     color: TEXT,
     flexShrink: 1,
@@ -315,12 +315,12 @@ const styles = StyleSheet.create({
     paddingTop: 10,
   },
   totalLabel: {
-    fontFamily: 'Poppins_700Bold',
+    fontFamily: 'PlusJakartaSans_700Bold',
     fontSize: 15,
     color: TEXT,
   },
   totalValue: {
-    fontFamily: 'Poppins_800ExtraBold',
+    fontFamily: 'PlusJakartaSans_800ExtraBold',
     fontSize: 17,
     color: PRIMARY,
   },
@@ -342,7 +342,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   paidText: {
-    fontFamily: 'Poppins_600SemiBold',
+    fontFamily: 'PlusJakartaSans_600SemiBold',
     fontSize: 11,
     color: '#16A34A',
   },
@@ -369,12 +369,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   methodLabel: {
-    fontFamily: 'Poppins_600SemiBold',
+    fontFamily: 'PlusJakartaSans_600SemiBold',
     fontSize: 13.5,
     color: TEXT,
   },
   methodSub: {
-    fontFamily: 'Poppins_400Regular',
+    fontFamily: 'PlusJakartaSans_400Regular',
     fontSize: 11,
     color: MUTED,
     marginTop: 1,
@@ -394,7 +394,7 @@ const styles = StyleSheet.create({
     borderColor: '#DCE8E1',
     paddingHorizontal: 14,
     paddingVertical: 10,
-    fontFamily: 'Poppins_400Regular',
+    fontFamily: 'PlusJakartaSans_400Regular',
     fontSize: 13,
     color: TEXT,
     minHeight: 60,
@@ -420,7 +420,7 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   mainBtnText: {
-    fontFamily: 'Poppins_600SemiBold',
+    fontFamily: 'PlusJakartaSans_600SemiBold',
     fontSize: 15,
     color: WHITE,
   },

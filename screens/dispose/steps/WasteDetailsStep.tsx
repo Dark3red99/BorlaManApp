@@ -143,14 +143,14 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   sectionLabel: {
-    fontFamily: 'Poppins_600SemiBold',
+    fontFamily: 'PlusJakartaSans_600SemiBold',
     fontSize: 14,
     color: TEXT,
     marginBottom: 10,
     marginTop: 8,
   },
   sectionHint: {
-    fontFamily: 'Poppins_400Regular',
+    fontFamily: 'PlusJakartaSans_400Regular',
     fontSize: 12,
     color: MUTED,
     marginTop: -6,
@@ -183,12 +183,12 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   typeLabel: {
-    fontFamily: 'Poppins_600SemiBold',
+    fontFamily: 'PlusJakartaSans_600SemiBold',
     fontSize: 12,
     color: TEXT,
   },
   typeDesc: {
-    fontFamily: 'Poppins_400Regular',
+    fontFamily: 'PlusJakartaSans_400Regular',
     fontSize: 9.5,
     color: MUTED,
     textAlign: 'center',
@@ -216,18 +216,18 @@ const styles = StyleSheet.create({
     backgroundColor: '#ECFDF5',
   },
   sizeLabel: {
-    fontFamily: 'Poppins_600SemiBold',
+    fontFamily: 'PlusJakartaSans_600SemiBold',
     fontSize: 12,
     color: TEXT,
   },
   sizeKg: {
-    fontFamily: 'Poppins_700Bold',
+    fontFamily: 'PlusJakartaSans_700Bold',
     fontSize: 13,
     color: TEXT,
     marginTop: 2,
   },
   sizeHint: {
-    fontFamily: 'Poppins_400Regular',
+    fontFamily: 'PlusJakartaSans_400Regular',
     fontSize: 9.5,
     color: MUTED,
     marginTop: 2,
@@ -273,7 +273,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   photoAddText: {
-    fontFamily: 'Poppins_500Medium',
+    fontFamily: 'PlusJakartaSans_500Medium',
     fontSize: 10,
     color: PRIMARY,
   },

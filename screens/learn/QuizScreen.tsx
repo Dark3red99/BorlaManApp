@@ -175,8 +175,8 @@ export default function QuizScreen({ navigation, route }: RootStackScreenProps<'
               <Text
                 style={[
                   styles.optionText,
-                  showRight && { color: GREEN, fontFamily: 'Poppins_600SemiBold' },
-                  showWrong && { color: RED, fontFamily: 'Poppins_600SemiBold' },
+                  showRight && { color: GREEN, fontFamily: 'PlusJakartaSans_600SemiBold' },
+                  showWrong && { color: RED, fontFamily: 'PlusJakartaSans_600SemiBold' },
                 ]}
               >
                 {option}
@@ -236,12 +236,12 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   stepCount: {
-    fontFamily: 'Poppins_400Regular',
+    fontFamily: 'PlusJakartaSans_400Regular',
     fontSize: 11,
     color: MUTED,
   },
   stepTitle: {
-    fontFamily: 'Poppins_700Bold',
+    fontFamily: 'PlusJakartaSans_700Bold',
     fontSize: 18,
     color: TEXT,
     lineHeight: 24,
@@ -264,7 +264,7 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   prompt: {
-    fontFamily: 'Poppins_700Bold',
+    fontFamily: 'PlusJakartaSans_700Bold',
     fontSize: 17,
     color: TEXT,
     lineHeight: 25,
@@ -293,7 +293,7 @@ const styles = StyleSheet.create({
   },
   optionText: {
     flex: 1,
-    fontFamily: 'Poppins_400Regular',
+    fontFamily: 'PlusJakartaSans_400Regular',
     fontSize: 13.5,
     color: TEXT,
     lineHeight: 20,
@@ -308,7 +308,7 @@ const styles = StyleSheet.create({
   },
   explainText: {
     flex: 1,
-    fontFamily: 'Poppins_500Medium',
+    fontFamily: 'PlusJakartaSans_500Medium',
     fontSize: 12.5,
     color: TEXT,
     lineHeight: 19,
@@ -335,18 +335,18 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   scoreBig: {
-    fontFamily: 'Poppins_800ExtraBold',
+    fontFamily: 'PlusJakartaSans_800ExtraBold',
     fontSize: 32,
     color: WHITE,
     lineHeight: 40,
   },
   scoreSub: {
-    fontFamily: 'Poppins_400Regular',
+    fontFamily: 'PlusJakartaSans_400Regular',
     fontSize: 12,
     color: 'rgba(255,255,255,0.85)',
   },
   resultTitle: {
-    fontFamily: 'Poppins_800ExtraBold',
+    fontFamily: 'PlusJakartaSans_800ExtraBold',
     fontSize: 22,
     color: TEXT,
   },
@@ -361,12 +361,12 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   pointsPillText: {
-    fontFamily: 'Poppins_600SemiBold',
+    fontFamily: 'PlusJakartaSans_600SemiBold',
     fontSize: 13,
     color: '#047857',
   },
   noPointsText: {
-    fontFamily: 'Poppins_400Regular',
+    fontFamily: 'PlusJakartaSans_400Regular',
     fontSize: 12.5,
     color: MUTED,
     textAlign: 'center',
@@ -380,7 +380,7 @@ const styles = StyleSheet.create({
     marginTop: 22,
   },
   reviewLinkText: {
-    fontFamily: 'Poppins_600SemiBold',
+    fontFamily: 'PlusJakartaSans_600SemiBold',
     fontSize: 13,
     color: PRIMARY,
   },
@@ -409,7 +409,7 @@ const styles = StyleSheet.create({
     elevation: 0,
   },
   mainBtnText: {
-    fontFamily: 'Poppins_600SemiBold',
+    fontFamily: 'PlusJakartaSans_600SemiBold',
     fontSize: 15,
     color: WHITE,
   },

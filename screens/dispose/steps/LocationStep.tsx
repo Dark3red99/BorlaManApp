@@ -15,7 +15,7 @@ import {
   UserLocation,
   type CameraRef,
   type ViewStateChangeEvent,
-} from '@maplibre/maplibre-react-native';
+} from '../../../components/map/MapLibre';
 import * as Location from 'expo-location';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
@@ -173,7 +173,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#E2E8F0',
   },
   pinWrap: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -209,24 +209,24 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
   },
   hintText: {
-    fontFamily: 'Poppins_500Medium',
+    fontFamily: 'PlusJakartaSans_500Medium',
     fontSize: 11,
     color: WHITE,
   },
   mapKeyHint: {
-    fontFamily: 'Poppins_400Regular',
+    fontFamily: 'PlusJakartaSans_400Regular',
     fontSize: 11,
     color: AMBER_TEXT,
     marginTop: 8,
   },
   deniedText: {
-    fontFamily: 'Poppins_400Regular',
+    fontFamily: 'PlusJakartaSans_400Regular',
     fontSize: 11,
     color: '#DC2626',
     marginTop: 8,
   },
   inputLabel: {
-    fontFamily: 'Poppins_600SemiBold',
+    fontFamily: 'PlusJakartaSans_600SemiBold',
     fontSize: 13,
     color: TEXT,
     marginTop: 12,
@@ -239,7 +239,7 @@ const styles = StyleSheet.create({
     borderColor: BORDER,
     paddingHorizontal: 14,
     paddingVertical: 10,
-    fontFamily: 'Poppins_400Regular',
+    fontFamily: 'PlusJakartaSans_400Regular',
     fontSize: 13,
     color: TEXT,
     minHeight: 52,
