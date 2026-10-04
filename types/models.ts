@@ -88,6 +88,8 @@ export type RecurringPickup = {
   volumeKg: number;
   weekday: number; // 0 = Sunday … 6 = Saturday (JS Date#getDay)
   hour: number; // pickup window start, 24h
+  frequency?: 'weekly' | 'biweekly'; // missing on older plans = weekly
+  priceGhs?: number; // per-pickup price locked in when the plan was made
   location: GeoPoint;
   addressText: string;
   active: boolean; // false = paused
@@ -144,12 +146,10 @@ export type PointsEntry = {
 // is computed with the same formula the backend will use.
 export type PriceQuote = {
   priceGhs: number;
-  distanceKm: number;
   breakdown: {
-    baseGhs: number;
-    distanceGhs: number;
-    weightGhs: number;
+    sizeGhs: number; // load-size price after the waste-type multiplier
     typeMultiplier: number;
+    priorityGhs: number; // ASAP fee, 0 when scheduled
   };
 };
 

@@ -1,15 +1,13 @@
-import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import React, { useState } from 'react';
+import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
+import { CalendarDays, Zap, type LucideIcon } from 'lucide-react-native';
 
 import type { PickupDraft } from '../RequestPickupScreen';
 import { PICKUP_SLOT_HOURS as SLOTS, slotLabel } from '../../../constants/schedule';
-
-const PRIMARY = '#059669';
-const WHITE   = '#FFFFFF';
-const TEXT    = '#0F172A';
-const MUTED   = '#64748B';
-const BORDER  = '#DCE8E1';
+import { PRIORITY_FEE_GHS } from '../../../constants/pricing';
+import { Elevation, Fonts, Radius, type Palette } from '../../../constants/theme';
+import { useTheme, useThemedStyles } from '../../../context/ThemeContext';
+import { IconTile, Pills, Segmented } from '../../../components/ui';
 
 type Props = {
   draft: PickupDraft;
@@ -30,6 +28,8 @@ function slotIso(day: Date, hour: number): string {
 }
 
 export default function ScheduleStep({ draft, onChange }: Props) {
+  const styles = useThemedStyles(makeStyles);
+
   const days = [0, 1, 2].map((offset) => {
     const date = dayAt(offset);
     return {
@@ -39,227 +39,151 @@ export default function ScheduleStep({ draft, onChange }: Props) {
           ? 'Today'
           : offset === 1
             ? 'Tomorrow'
-            : date.toLocaleDateString('en-GB', { weekday: 'long' }),
+            : date.toLocaleDateString('en-GB', { weekday: 'short' }),
       sub: date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }),
     };
   });
 
   const scheduled = draft.scheduledFor ? new Date(draft.scheduledFor) : null;
-  const selectedDayIdx = scheduled
-    ? days.findIndex((d) => d.date.toDateString() === scheduled.toDateString())
-    : -1;
   const selectedHour = scheduled ? scheduled.getHours() : null;
+  // The day is held locally so it stays highlighted before a time is chosen.
+  const [dayIdx, setDayIdx] = useState(() => {
+    const idx = scheduled ? days.findIndex((d) => d.date.toDateString() === scheduled.toDateString()) : -1;
+    return idx >= 0 ? idx : 0;
+  });
 
   const isSlotAvailable = (day: Date, hour: number) => new Date(slotIso(day, hour)) > new Date();
 
   const pickDay = (idx: number) => {
+    setDayIdx(idx);
     // keep the chosen hour if it's still valid on the new day, else clear it
     const keepHour = selectedHour != null && isSlotAvailable(days[idx].date, selectedHour);
-    onChange({
-      asap: false,
-      scheduledFor: keepHour ? slotIso(days[idx].date, selectedHour!) : null,
-    });
+    onChange({ asap: false, scheduledFor: keepHour ? slotIso(days[idx].date, selectedHour!) : null });
   };
 
   return (
     <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-      {/* ── ASAP ── */}
-      <TouchableOpacity
-        style={[styles.asapCard, draft.asap && styles.cardSelected]}
-        onPress={() => onChange({ asap: true, scheduledFor: null })}
-        activeOpacity={0.8}
-      >
-        <View style={[styles.asapIconBox, draft.asap && { backgroundColor: PRIMARY }]}>
-          <MaterialCommunityIcons name="flash" size={24} color={draft.asap ? WHITE : PRIMARY} />
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.asapTitle}>As soon as possible</Text>
-          <Text style={styles.asapSub}>A nearby collector heads to you right away</Text>
-        </View>
-        <Ionicons
-          name={draft.asap ? 'radio-button-on' : 'radio-button-off'}
-          size={22}
-          color={draft.asap ? PRIMARY : MUTED}
-        />
-      </TouchableOpacity>
+      <View>
+        <Text style={styles.sectionTitle}>When should we come?</Text>
+        <Text style={styles.sectionHint}>Scheduling ahead is cheaper. Collectors plan their rounds around it.</Text>
+      </View>
 
-      {/* ── Scheduled ── */}
-      <TouchableOpacity
-        style={[styles.asapCard, !draft.asap && styles.cardSelected]}
+      <ModeCard
+        icon={Zap}
+        title="As soon as possible"
+        sub="The nearest free collector heads to you now"
+        fee={`+GH₵ ${PRIORITY_FEE_GHS}`}
+        selected={draft.asap}
+        onPress={() => onChange({ asap: true, scheduledFor: null })}
+      />
+      <ModeCard
+        icon={CalendarDays}
+        title="Schedule for later"
+        sub="Pick a day and a time window"
+        fee="No extra fee"
+        selected={!draft.asap}
         onPress={() => onChange({ asap: false })}
-        activeOpacity={0.8}
-      >
-        <View style={[styles.asapIconBox, !draft.asap && { backgroundColor: PRIMARY }]}>
-          <Ionicons name="calendar-outline" size={22} color={!draft.asap ? WHITE : PRIMARY} />
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.asapTitle}>Schedule for later</Text>
-          <Text style={styles.asapSub}>Pick a day and time window</Text>
-        </View>
-        <Ionicons
-          name={!draft.asap ? 'radio-button-on' : 'radio-button-off'}
-          size={22}
-          color={!draft.asap ? PRIMARY : MUTED}
-        />
-      </TouchableOpacity>
+      />
 
       {!draft.asap && (
         <>
-          <Text style={styles.sectionLabel}>Day</Text>
-          <View style={styles.dayRow}>
-            {days.map((day, idx) => {
-              const selected = selectedDayIdx === idx;
-              return (
-                <TouchableOpacity
-                  key={day.label}
-                  style={[styles.dayChip, selected && styles.chipSelected]}
-                  onPress={() => pickDay(idx)}
-                  activeOpacity={0.8}
-                >
-                  <Text style={[styles.dayChipLabel, selected && { color: WHITE }]}>{day.label}</Text>
-                  <Text style={[styles.dayChipSub, selected && { color: 'rgba(255,255,255,0.85)' }]}>
-                    {day.sub}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+          <Text style={[styles.sectionTitle, styles.sectionGap]}>Day</Text>
+          <Segmented
+            options={days.map((day, idx) => ({ key: idx, label: day.label, sub: day.sub }))}
+            value={dayIdx}
+            onChange={pickDay}
+          />
 
-          <Text style={styles.sectionLabel}>Time window</Text>
-          <View style={styles.slotGrid}>
-            {SLOTS.map((hour) => {
-              const day = selectedDayIdx >= 0 ? days[selectedDayIdx].date : days[0].date;
-              const available = isSlotAvailable(day, hour);
-              const selected = selectedDayIdx >= 0 && selectedHour === hour;
-              return (
-                <TouchableOpacity
-                  key={hour}
-                  style={[
-                    styles.slotChip,
-                    selected && styles.chipSelected,
-                    !available && styles.slotDisabled,
-                  ]}
-                  disabled={!available}
-                  onPress={() => {
-                    const dayIdx = selectedDayIdx >= 0 ? selectedDayIdx : 0;
-                    onChange({ asap: false, scheduledFor: slotIso(days[dayIdx].date, hour) });
-                  }}
-                  activeOpacity={0.8}
-                >
-                  <Text
-                    style={[
-                      styles.slotLabel,
-                      selected && { color: WHITE },
-                      !available && { color: '#B6C2CE' },
-                    ]}
-                  >
-                    {slotLabel(hour)}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+          <Text style={[styles.sectionTitle, styles.sectionGap]}>Time window</Text>
+          <Pills
+            options={SLOTS.map((hour) => ({
+              key: hour,
+              label: slotLabel(hour),
+              disabled: !isSlotAvailable(days[dayIdx].date, hour),
+            }))}
+            isSelected={(hour) => selectedHour === hour}
+            onPress={(hour) => onChange({ asap: false, scheduledFor: slotIso(days[dayIdx].date, hour) })}
+          />
         </>
       )}
     </ScrollView>
   );
 }
 
-const styles = StyleSheet.create({
-  scroll: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 24,
-  },
-  asapCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: WHITE,
-    borderRadius: 16,
-    borderWidth: 1.5,
-    borderColor: BORDER,
-    padding: 14,
-    marginBottom: 12,
-  },
-  cardSelected: {
-    borderColor: PRIMARY,
-    backgroundColor: '#ECFDF5',
-  },
-  asapIconBox: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: '#D1FAE5',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  asapTitle: {
-    fontFamily: 'PlusJakartaSans_600SemiBold',
-    fontSize: 14,
-    color: TEXT,
-  },
-  asapSub: {
-    fontFamily: 'PlusJakartaSans_400Regular',
-    fontSize: 11.5,
-    color: MUTED,
-    marginTop: 1,
-  },
-  sectionLabel: {
-    fontFamily: 'PlusJakartaSans_600SemiBold',
-    fontSize: 14,
-    color: TEXT,
-    marginTop: 10,
-    marginBottom: 10,
-  },
-  dayRow: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  dayChip: {
-    flex: 1,
-    backgroundColor: WHITE,
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: BORDER,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  chipSelected: {
-    borderColor: PRIMARY,
-    backgroundColor: PRIMARY,
-  },
-  dayChipLabel: {
-    fontFamily: 'PlusJakartaSans_600SemiBold',
-    fontSize: 13,
-    color: TEXT,
-  },
-  dayChipSub: {
-    fontFamily: 'PlusJakartaSans_400Regular',
-    fontSize: 11,
-    color: MUTED,
-    marginTop: 1,
-  },
-  slotGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-  },
-  slotChip: {
-    backgroundColor: WHITE,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: BORDER,
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-  },
-  slotDisabled: {
-    backgroundColor: '#F1F5F9',
-    borderColor: '#E2E8F0',
-  },
-  slotLabel: {
-    fontFamily: 'PlusJakartaSans_500Medium',
-    fontSize: 13,
-    color: TEXT,
-  },
-});
+function ModeCard({
+  icon,
+  title,
+  sub,
+  fee,
+  selected,
+  onPress,
+}: {
+  icon: LucideIcon;
+  title: string;
+  sub: string;
+  fee: string;
+  selected: boolean;
+  onPress: () => void;
+}) {
+  const { ui } = useTheme();
+  const styles = useThemedStyles(makeStyles);
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="radio"
+      accessibilityState={{ selected }}
+      accessibilityLabel={`${title}, ${fee}`}
+      style={({ pressed }) => [styles.mode, selected && styles.modeSelected, pressed && styles.pressed]}
+    >
+      <IconTile icon={icon} tone={selected ? 'solid' : 'accent'} size={44} />
+      <View style={styles.modeText}>
+        <Text style={styles.modeTitle}>{title}</Text>
+        <Text style={styles.modeSub}>{sub}</Text>
+      </View>
+      <View style={styles.modeRight}>
+        <Text style={[styles.fee, selected && { color: ui.accent }]}>{fee}</Text>
+        <View style={[styles.radio, selected && styles.radioOn]}>
+          {selected && <View style={styles.radioDot} />}
+        </View>
+      </View>
+    </Pressable>
+  );
+}
+
+const makeStyles = (ui: Palette) =>
+  StyleSheet.create({
+    scroll: { paddingHorizontal: 20, paddingTop: 18, paddingBottom: 24, gap: 14 },
+    pressed: { opacity: 0.85 },
+    sectionTitle: { fontFamily: Fonts.semiBold, fontSize: 16, color: ui.text, letterSpacing: -0.1 },
+    sectionHint: { fontFamily: Fonts.regular, fontSize: 12.5, color: ui.textMuted, marginTop: 2 },
+    sectionGap: { marginTop: 8 },
+
+    mode: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      backgroundColor: ui.surface,
+      borderRadius: Radius.lg,
+      borderWidth: 2,
+      borderColor: 'transparent',
+      padding: 14,
+      ...Elevation.card,
+    },
+    modeSelected: { borderColor: ui.accent },
+    modeText: { flex: 1 },
+    modeTitle: { fontFamily: Fonts.semiBold, fontSize: 14.5, color: ui.text },
+    modeSub: { fontFamily: Fonts.regular, fontSize: 12, color: ui.textMuted, marginTop: 2 },
+    modeRight: { alignItems: 'flex-end', gap: 8 },
+    fee: { fontFamily: Fonts.semiBold, fontSize: 12, color: ui.textMuted },
+    radio: {
+      width: 20,
+      height: 20,
+      borderRadius: 10,
+      borderWidth: 2,
+      borderColor: ui.wellStrong,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    radioOn: { borderColor: ui.accent },
+    radioDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: ui.accent },
+  });

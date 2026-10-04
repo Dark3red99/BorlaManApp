@@ -23,7 +23,7 @@ export type RootStackParamList = {
   RequestPickup: undefined;
   TrackPickup: { requestId: string };
   PickupComplete: { requestId: string };
-  RecurringPickup: undefined;
+  RecurringPickup: { wasteType?: WasteType; volumeKg?: number } | undefined;
   Guide: { wasteType: WasteType };
   Quiz: { wasteType: WasteType };
 };

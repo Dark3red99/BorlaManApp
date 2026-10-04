@@ -10,3 +10,7 @@ export { default as ProgressRing } from './ProgressRing';
 export { default as Avatar, initialsOf } from './Avatar';
 export { ScreenHeader, SectionHeader } from './Headers';
 export { WASTE_ICONS, wasteIcon } from './wasteIcons';
+export { WASTE_IMAGES } from './wasteImages';
+export { default as WasteTypeCard } from './WasteTypeCard';
+export { default as Segmented, type SegmentOption } from './Segmented';
+export { default as Pills, type PillOption } from './Pills';

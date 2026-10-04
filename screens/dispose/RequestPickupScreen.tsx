@@ -1,31 +1,20 @@
 import React, { useEffect, useState } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  StatusBar,
-  ActivityIndicator,
-  Alert,
-  BackHandler,
-} from 'react-native';
+import { View, Text, StyleSheet, StatusBar, ActivityIndicator, Alert, BackHandler } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { ArrowRight, ChevronLeft } from 'lucide-react-native';
 
 import { useAuth } from '../../context/AuthContext';
+import { useTheme, useThemedStyles } from '../../context/ThemeContext';
 import * as pickupService from '../../services/pickupService';
 import type { GeoPoint, PriceQuote, WasteType } from '../../types/models';
 import type { RootStackScreenProps } from '../../types/navigation';
+import { Fonts, Radius, type Palette } from '../../constants/theme';
+import { Button, IconButton } from '../../components/ui';
+import { pickupPrice } from '../../constants/pricing';
 import WasteDetailsStep from './steps/WasteDetailsStep';
 import LocationStep from './steps/LocationStep';
 import ScheduleStep from './steps/ScheduleStep';
 import ReviewStep from './steps/ReviewStep';
-
-const PRIMARY = '#059669';
-const BG      = '#F3F8F5';
-const WHITE   = '#FFFFFF';
-const TEXT    = '#0F172A';
-const MUTED   = '#64748B';
 
 // Everything the wizard collects before the request is created.
 export type PickupDraft = {
@@ -48,10 +37,13 @@ const INITIAL_DRAFT: PickupDraft = {
   scheduledFor: null,
 };
 
-const STEP_TITLES = ['Waste Details', 'Pickup Location', 'Pickup Time', 'Review & Confirm'];
+const STEP_TITLES = ['Waste details', 'Pickup location', 'Pickup time', 'Review & confirm'];
+const STEP_COUNT = STEP_TITLES.length;
 
 export default function RequestPickupScreen({ navigation }: RootStackScreenProps<'RequestPickup'>) {
   const { user } = useAuth();
+  const { ui } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const [step, setStep] = useState(0);
   const [draft, setDraft] = useState<PickupDraft>(INITIAL_DRAFT);
   const [quote, setQuote] = useState<PriceQuote | null>(null);
@@ -79,10 +71,10 @@ export default function RequestPickupScreen({ navigation }: RootStackScreenProps
     if (step !== 3 || !draft.location || !draft.wasteType || !draft.volumeKg) return;
     setQuote(null);
     pickupService
-      .getQuote(draft.location, draft.wasteType, draft.volumeKg)
+      .getQuote(draft.location, draft.wasteType, draft.volumeKg, draft.asap)
       .then(setQuote)
       .catch(() => Alert.alert('Price estimate failed', 'Please go back and try again.'));
-  }, [step, draft.location, draft.wasteType, draft.volumeKg]);
+  }, [step, draft.location, draft.wasteType, draft.volumeKg, draft.asap]);
 
   const stepValid = (() => {
     switch (step) {
@@ -119,26 +111,41 @@ export default function RequestPickupScreen({ navigation }: RootStackScreenProps
     }
   };
 
+  // Running price in the CTA from the moment type + size are known, so the
+  // total is never a surprise at the review step.
+  const livePrice =
+    draft.wasteType && draft.volumeKg
+      ? pickupPrice(draft.volumeKg, draft.wasteType, step >= 2 && draft.asap).totalGhs // ASAP fee only once the time step is reached
+      : null;
+  const ctaLabel =
+    step < 3
+      ? livePrice != null ? `Continue · GH₵ ${livePrice}` : 'Continue'
+      : quote ? `Request pickup · GH₵ ${quote.priceGhs}` : 'Request pickup';
+
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right', 'bottom']}>
-      <StatusBar barStyle="dark-content" backgroundColor={BG} />
+      <StatusBar barStyle={ui.dark ? 'light-content' : 'dark-content'} backgroundColor={ui.bg} />
 
-      {/* ── Header with progress ── */}
+      {/* ── Header ── */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={goBack} activeOpacity={0.7}>
-          <Ionicons name="arrow-back" size={22} color={TEXT} />
-        </TouchableOpacity>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.stepCount}>Step {step + 1} of 4</Text>
+        <IconButton icon={ChevronLeft} accessibilityLabel={step === 0 ? 'Close' : 'Previous step'} onPress={goBack} />
+        <View style={styles.headerText}>
+          <Text style={styles.stepCount}>Step {step + 1} of {STEP_COUNT}</Text>
           <Text style={styles.stepTitle}>{STEP_TITLES[step]}</Text>
         </View>
+        {/* spacer keeps the title centred against the back button */}
+        <View style={styles.headerSpacer} />
       </View>
-      <View style={styles.progressTrack}>
-        <View style={[styles.progressBar, { width: `${((step + 1) / 4) * 100}%` }]} />
+
+      {/* Segmented progress: one bar per step */}
+      <View style={styles.progress} accessibilityRole="progressbar" accessibilityValue={{ min: 1, max: STEP_COUNT, now: step + 1 }}>
+        {STEP_TITLES.map((t, i) => (
+          <View key={t} style={[styles.segment, i <= step && styles.segmentDone]} />
+        ))}
       </View>
 
       {/* ── Step body ── */}
-      <View style={{ flex: 1 }}>
+      <View style={styles.body}>
         {step === 0 && <WasteDetailsStep draft={draft} onChange={patchDraft} />}
         {step === 1 && <LocationStep draft={draft} onChange={patchDraft} />}
         {step === 2 && <ScheduleStep draft={draft} onChange={patchDraft} />}
@@ -147,100 +154,56 @@ export default function RequestPickupScreen({ navigation }: RootStackScreenProps
 
       {/* ── Footer ── */}
       <View style={styles.footer}>
-        <TouchableOpacity
-          style={[styles.nextBtn, !stepValid && styles.nextBtnDisabled]}
-          onPress={onNext}
-          disabled={!stepValid}
-          activeOpacity={0.85}
-        >
-          {submitting ? (
-            <ActivityIndicator color={WHITE} />
-          ) : (
-            <Text style={styles.nextBtnText}>
-              {step < 3 ? 'Continue' : quote ? `Request Pickup • GH₵ ${quote.priceGhs.toFixed(2)}` : 'Request Pickup'}
-            </Text>
-          )}
-        </TouchableOpacity>
+        {submitting ? (
+          <View style={styles.submitting}>
+            <ActivityIndicator color={ui.onAccent} />
+          </View>
+        ) : (
+          <Button
+            label={ctaLabel}
+            icon={step < 3 ? ArrowRight : undefined}
+            onPress={onNext}
+            disabled={!stepValid}
+            style={!stepValid && styles.ctaDisabled}
+          />
+        )}
       </View>
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: BG,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 12,
-  },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: WHITE,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.07,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 3,
-  },
-  stepCount: {
-    fontFamily: 'PlusJakartaSans_400Regular',
-    fontSize: 11,
-    color: MUTED,
-  },
-  stepTitle: {
-    fontFamily: 'PlusJakartaSans_700Bold',
-    fontSize: 18,
-    color: TEXT,
-    lineHeight: 24,
-  },
-  progressTrack: {
-    height: 4,
-    backgroundColor: '#E2E8F0',
-    marginHorizontal: 20,
-    borderRadius: 4,
-    overflow: 'hidden',
-    marginBottom: 4,
-  },
-  progressBar: {
-    height: 4,
-    backgroundColor: PRIMARY,
-    borderRadius: 4,
-  },
-  footer: {
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 6,
-    backgroundColor: BG,
-  },
-  nextBtn: {
-    backgroundColor: PRIMARY,
-    borderRadius: 16,
-    paddingVertical: 16,
-    alignItems: 'center',
-    shadowColor: '#047857',
-    shadowOpacity: 0.28,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 6,
-  },
-  nextBtnDisabled: {
-    backgroundColor: '#A7CDBF',
-    shadowOpacity: 0,
-    elevation: 0,
-  },
-  nextBtnText: {
-    fontFamily: 'PlusJakartaSans_600SemiBold',
-    fontSize: 15,
-    color: WHITE,
-  },
-});
+const makeStyles = (ui: Palette) =>
+  StyleSheet.create({
+    safe: { flex: 1, backgroundColor: ui.bg },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      paddingHorizontal: 20,
+      paddingTop: 8,
+      paddingBottom: 14,
+    },
+    headerText: { flex: 1, alignItems: 'center' },
+    headerSpacer: { width: 44 },
+    stepCount: { fontFamily: Fonts.medium, fontSize: 12, color: ui.textMuted },
+    stepTitle: {
+      fontFamily: Fonts.bold,
+      fontSize: 18,
+      lineHeight: 24,
+      color: ui.text,
+      letterSpacing: -0.2,
+    },
+    progress: { flexDirection: 'row', gap: 6, paddingHorizontal: 20, marginBottom: 4 },
+    segment: { flex: 1, height: 4, borderRadius: Radius.pill, backgroundColor: ui.wellStrong },
+    segmentDone: { backgroundColor: ui.accent },
+    body: { flex: 1 },
+    footer: { paddingHorizontal: 20, paddingTop: 10, paddingBottom: 8, backgroundColor: ui.bg },
+    ctaDisabled: { opacity: 0.4, shadowOpacity: 0, elevation: 0 },
+    submitting: {
+      height: 54,
+      borderRadius: Radius.pill,
+      backgroundColor: ui.accent,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+  });

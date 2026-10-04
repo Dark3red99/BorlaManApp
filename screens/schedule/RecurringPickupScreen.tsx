@@ -4,16 +4,16 @@ import {
   Text,
   ScrollView,
   TextInput,
-  TouchableOpacity,
   StyleSheet,
   StatusBar,
   ActivityIndicator,
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { ChevronLeft, MapPin, Repeat } from 'lucide-react-native';
 
 import { useAuth } from '../../context/AuthContext';
+import { useTheme, useThemedStyles } from '../../context/ThemeContext';
 import * as pickupService from '../../services/pickupService';
 import type { GeoPoint, WasteType } from '../../types/models';
 import type { RootStackScreenProps } from '../../types/navigation';
@@ -25,23 +25,23 @@ import {
   WEEKDAY_SHORT,
   WEEKDAYS_MON_FIRST,
 } from '../../constants/schedule';
-
-const PRIMARY = '#059669';
-const BG      = '#F3F8F5';
-const WHITE   = '#FFFFFF';
-const TEXT    = '#0F172A';
-const MUTED   = '#64748B';
-const BORDER  = '#DCE8E1';
+import { Fonts, ICON_STROKE, Radius, type Palette } from '../../constants/theme';
+import { planMonthlyEstimate, planPrice, type PlanFrequency } from '../../constants/pricing';
+import { Button, Card, IconButton, Pills, Segmented, WasteTypeCard } from '../../components/ui';
 
 // Fallback pickup point until the plan form gets its own map step; recurring
 // pickups default to the resident's registered address.
 const ACCRA_CENTER: GeoPoint = { latitude: 5.6037, longitude: -0.187 };
 
-export default function RecurringPickupScreen({ navigation }: RootStackScreenProps<'RecurringPickup'>) {
+export default function RecurringPickupScreen({ navigation, route }: RootStackScreenProps<'RecurringPickup'>) {
   const { user } = useAuth();
-  const [wasteType, setWasteType] = useState<WasteType | null>(null);
-  const [volumeKg, setVolumeKg] = useState<number | null>(null);
-  const [weekday, setWeekday] = useState<number | null>(null);
+  const { ui } = useTheme();
+  const styles = useThemedStyles(makeStyles);
+  // Prefilled when arriving from the "Need this every week?" nudge on review.
+  const [wasteType, setWasteType] = useState<WasteType | null>(route.params?.wasteType ?? null);
+  const [volumeKg, setVolumeKg] = useState<number | null>(route.params?.volumeKg ?? null);
+  const [weekdays, setWeekdays] = useState<number[]>([]);
+  const [frequency, setFrequency] = useState<PlanFrequency>('weekly');
   const [hour, setHour] = useState<number | null>(null);
   const [addressText, setAddressText] = useState('');
   const [location, setLocation] = useState<GeoPoint>(ACCRA_CENTER);
@@ -66,8 +66,21 @@ export default function RecurringPickupScreen({ navigation }: RootStackScreenPro
   }, [user]);
 
   const valid =
-    wasteType != null && volumeKg != null && weekday != null && hour != null &&
+    wasteType != null && volumeKg != null && weekdays.length > 0 && hour != null &&
     addressText.trim().length > 0;
+
+  const perPickup = wasteType && volumeKg ? planPrice(volumeKg, wasteType) : null;
+  const monthly =
+    perPickup != null && weekdays.length > 0
+      ? planMonthlyEstimate(perPickup, weekdays.length, frequency)
+      : null;
+
+  const toggleDay = (day: number) =>
+    setWeekdays((cur) => (cur.includes(day) ? cur.filter((d) => d !== day) : [...cur, day]));
+
+  const daysText = WEEKDAYS_MON_FIRST.filter((d) => weekdays.includes(d))
+    .map((d) => (weekdays.length > 2 ? WEEKDAY_SHORT[d] : WEEKDAY_LONG[d]))
+    .join(weekdays.length > 2 ? ', ' : ' & ');
 
   const onSave = async () => {
     if (!user || !valid) return;
@@ -77,7 +90,8 @@ export default function RecurringPickupScreen({ navigation }: RootStackScreenPro
         userId: user.id,
         wasteType: wasteType!,
         volumeKg: volumeKg!,
-        weekday: weekday!,
+        weekdays,
+        frequency,
         hour: hour!,
         location,
         addressText: addressText.trim(),
@@ -91,114 +105,129 @@ export default function RecurringPickupScreen({ navigation }: RootStackScreenPro
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right', 'bottom']}>
-      <StatusBar barStyle="dark-content" backgroundColor={BG} />
+      <StatusBar barStyle={ui.dark ? 'light-content' : 'dark-content'} backgroundColor={ui.bg} />
 
       {/* ── Header ── */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7}>
-          <Ionicons name="arrow-back" size={22} color={TEXT} />
-        </TouchableOpacity>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.title}>Recurring Pickup</Text>
-          <Text style={styles.subtitle}>Same day, same time, every week</Text>
+        <IconButton icon={ChevronLeft} accessibilityLabel="Back" onPress={() => navigation.goBack()} />
+        <View style={styles.headerText}>
+          <Text style={styles.title}>Recurring pickup</Text>
+          <Text style={styles.subtitle}>Set it once, we keep coming back</Text>
         </View>
+        {/* spacer keeps the title centred against the back button */}
+        <View style={styles.headerSpacer} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
         {/* ── Waste type ── */}
-        <Text style={styles.sectionLabel}>Waste type</Text>
+        <View>
+          <Text style={styles.sectionTitle}>What gets collected?</Text>
+          <Text style={styles.sectionHint}>Pick what you usually put out each week.</Text>
+        </View>
         <View style={styles.typeGrid}>
-          {WASTE_TYPES.map((meta) => {
-            const selected = wasteType === meta.type;
-            return (
-              <TouchableOpacity
-                key={meta.type}
-                style={[styles.typeChip, selected && { borderColor: meta.color, backgroundColor: meta.colorSoft }]}
-                onPress={() => setWasteType(meta.type)}
-                activeOpacity={0.8}
-              >
-                <MaterialCommunityIcons name={meta.icon as any} size={18} color={meta.color} />
-                <Text style={styles.typeChipLabel}>{meta.label}</Text>
-              </TouchableOpacity>
-            );
-          })}
+          {WASTE_TYPES.map((meta) => (
+            <WasteTypeCard
+              key={meta.type}
+              meta={meta}
+              selected={wasteType === meta.type}
+              onPress={() => setWasteType(meta.type)}
+            />
+          ))}
         </View>
 
         {/* ── Load size ── */}
-        <Text style={styles.sectionLabel}>Usual load</Text>
-        <View style={styles.sizeRow}>
-          {SIZE_BANDS.map((band) => {
-            const selected = volumeKg === band.kg;
-            return (
-              <TouchableOpacity
-                key={band.kg}
-                style={[styles.sizeChip, selected && styles.chipSelected]}
-                onPress={() => setVolumeKg(band.kg)}
-                activeOpacity={0.8}
-              >
-                <Text style={[styles.sizeChipLabel, selected && { color: WHITE }]}>{band.label}</Text>
-                <Text style={[styles.sizeChipHint, selected && { color: 'rgba(255,255,255,0.85)' }]}>
-                  {band.hint}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
+        <View>
+          <Text style={styles.sectionTitle}>Usual load</Text>
+          <Text style={styles.sectionHint}>Roughly how much each pickup. Priced per load.</Text>
         </View>
+        <Segmented
+          options={SIZE_BANDS.map((band) => ({
+            key: band.kg,
+            label: band.label,
+            sub: `GH₵ ${planPrice(band.kg, wasteType ?? 'household')}`,
+            accessibilityLabel: `${band.label}, ${band.hint}`,
+          }))}
+          value={volumeKg}
+          onChange={setVolumeKg}
+        />
+        {volumeKg != null && (
+          <Text style={styles.sizeHint}>{SIZE_BANDS.find((b) => b.kg === volumeKg)?.hint}</Text>
+        )}
 
-        {/* ── Weekday ── */}
-        <Text style={styles.sectionLabel}>Repeat every</Text>
-        <View style={styles.weekRow}>
-          {WEEKDAYS_MON_FIRST.map((day) => {
-            const selected = weekday === day;
-            return (
-              <TouchableOpacity
-                key={day}
-                style={[styles.weekChip, selected && styles.chipSelected]}
-                onPress={() => setWeekday(day)}
-                activeOpacity={0.8}
-              >
-                <Text style={[styles.weekChipLabel, selected && { color: WHITE }]}>
-                  {WEEKDAY_SHORT[day]}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
+        {/* ── Day ── */}
+        <View style={styles.sectionGap}>
+          <Text style={styles.sectionTitle}>Pickup days</Text>
+          <Text style={styles.sectionHint}>Choose one or more. Busy homes often go twice a week.</Text>
         </View>
-
-        {/* ── Time window ── */}
-        <Text style={styles.sectionLabel}>Time window</Text>
-        <View style={styles.slotGrid}>
-          {PICKUP_SLOT_HOURS.map((slotHour) => {
-            const selected = hour === slotHour;
-            return (
-              <TouchableOpacity
-                key={slotHour}
-                style={[styles.slotChip, selected && styles.chipSelected]}
-                onPress={() => setHour(slotHour)}
-                activeOpacity={0.8}
-              >
-                <Text style={[styles.slotLabel, selected && { color: WHITE }]}>{slotLabel(slotHour)}</Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-
-        {/* ── Address ── */}
-        <Text style={styles.sectionLabel}>Pickup address</Text>
-        <TextInput
-          style={styles.addressInput}
-          placeholder="House no., street, area"
-          placeholderTextColor="#94A3B8"
-          value={addressText}
-          onChangeText={setAddressText}
-          multiline
+        <Pills
+          layout="row"
+          multi
+          options={WEEKDAYS_MON_FIRST.map((day) => ({
+            key: day,
+            label: WEEKDAY_SHORT[day].slice(0, 2),
+            accessibilityLabel: WEEKDAY_LONG[day],
+          }))}
+          isSelected={(day) => weekdays.includes(day)}
+          onPress={toggleDay}
         />
 
-        {valid && (
-          <View style={styles.summaryBox}>
-            <Ionicons name="repeat" size={16} color={PRIMARY} />
-            <Text style={styles.summaryText}>
-              Every {WEEKDAY_LONG[weekday!]}, {slotLabel(hour!)} · ~{volumeKg} kg
+        {/* ── Frequency ── */}
+        <Text style={[styles.sectionTitle, styles.sectionGap]}>How often</Text>
+        <Segmented
+          options={[
+            { key: 'weekly' as const, label: 'Every week' },
+            { key: 'biweekly' as const, label: 'Every 2 weeks' },
+          ]}
+          value={frequency}
+          onChange={setFrequency}
+        />
+
+        {/* ── Time window ── */}
+        <Text style={[styles.sectionTitle, styles.sectionGap]}>Time window</Text>
+        <Pills
+          options={PICKUP_SLOT_HOURS.map((h) => ({ key: h, label: slotLabel(h) }))}
+          isSelected={(h) => hour === h}
+          onPress={setHour}
+        />
+
+        {/* ── Address ── */}
+        <Text style={[styles.sectionTitle, styles.sectionGap]}>Pickup address</Text>
+        <Card style={styles.addressCard}>
+          <MapPin size={18} color={ui.accent} strokeWidth={ICON_STROKE} style={styles.addressIcon} />
+          <TextInput
+            style={styles.addressInput}
+            placeholder="House no., street, area"
+            placeholderTextColor={ui.textFaint}
+            value={addressText}
+            onChangeText={setAddressText}
+            multiline
+          />
+        </Card>
+
+        {perPickup != null && (
+          <View style={styles.summary}>
+            <View style={styles.summaryTop}>
+              <View style={styles.summaryIcon}>
+                <Repeat size={16} color={ui.onAccent} strokeWidth={2.25} />
+              </View>
+              <View style={styles.summaryBody}>
+                <Text style={styles.summaryPrice}>
+                  GH₵ {perPickup} <Text style={styles.summaryUnit}>per pickup</Text>
+                </Text>
+                {monthly != null && <Text style={styles.summaryText}>About GH₵ {monthly} a month</Text>}
+              </View>
+            </View>
+            {weekdays.length > 0 && hour != null && (
+              <Text style={styles.summaryText}>
+                {frequency === 'weekly' ? 'Every' : 'Every other'} {daysText}, {slotLabel(hour)}
+              </Text>
+            )}
+            <Text style={styles.summaryNote}>
+              You only pay for pickups that happen, after each collection. Pause or cancel any time.
             </Text>
           </View>
         )}
@@ -206,226 +235,113 @@ export default function RecurringPickupScreen({ navigation }: RootStackScreenPro
 
       {/* ── Footer ── */}
       <View style={styles.footer}>
-        <TouchableOpacity
-          style={[styles.saveBtn, !valid && styles.saveBtnDisabled]}
-          onPress={onSave}
-          disabled={!valid || saving}
-          activeOpacity={0.85}
-        >
-          {saving ? (
-            <ActivityIndicator color={WHITE} />
-          ) : (
-            <Text style={styles.saveBtnText}>Save Recurring Pickup</Text>
-          )}
-        </TouchableOpacity>
+        {saving ? (
+          <View style={styles.saving}>
+            <ActivityIndicator color={ui.onAccent} />
+          </View>
+        ) : (
+          <Button
+            label={perPickup != null ? `Start plan · GH₵ ${perPickup}/pickup` : 'Start plan'}
+            onPress={onSave}
+            disabled={!valid}
+            style={!valid && styles.ctaDisabled}
+          />
+        )}
       </View>
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: BG,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 6,
-  },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: WHITE,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.07,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 3,
-  },
-  title: {
-    fontFamily: 'PlusJakartaSans_700Bold',
-    fontSize: 18,
-    color: TEXT,
-    lineHeight: 24,
-  },
-  subtitle: {
-    fontFamily: 'PlusJakartaSans_400Regular',
-    fontSize: 11.5,
-    color: MUTED,
-  },
-  scroll: {
-    paddingHorizontal: 20,
-    paddingTop: 8,
-    paddingBottom: 24,
-  },
-  sectionLabel: {
-    fontFamily: 'PlusJakartaSans_600SemiBold',
-    fontSize: 14,
-    color: TEXT,
-    marginTop: 14,
-    marginBottom: 10,
-  },
+const makeStyles = (ui: Palette) =>
+  StyleSheet.create({
+    safe: { flex: 1, backgroundColor: ui.bg },
+    pressed: { opacity: 0.85 },
 
-  // Waste type chips
-  typeGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-  },
-  typeChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 7,
-    backgroundColor: WHITE,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: BORDER,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-  },
-  typeChipLabel: {
-    fontFamily: 'PlusJakartaSans_500Medium',
-    fontSize: 13,
-    color: TEXT,
-  },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      paddingHorizontal: 20,
+      paddingTop: 8,
+      paddingBottom: 10,
+    },
+    headerText: { flex: 1, alignItems: 'center' },
+    headerSpacer: { width: 44 },
+    title: { fontFamily: Fonts.bold, fontSize: 18, lineHeight: 24, color: ui.text, letterSpacing: -0.2 },
+    subtitle: { fontFamily: Fonts.medium, fontSize: 12, color: ui.textMuted },
 
-  // Size chips
-  sizeRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  sizeChip: {
-    flex: 1,
-    backgroundColor: WHITE,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: BORDER,
-    paddingVertical: 10,
-    alignItems: 'center',
-  },
-  sizeChipLabel: {
-    fontFamily: 'PlusJakartaSans_600SemiBold',
-    fontSize: 12.5,
-    color: TEXT,
-  },
-  sizeChipHint: {
-    fontFamily: 'PlusJakartaSans_400Regular',
-    fontSize: 10,
-    color: MUTED,
-    marginTop: 1,
-  },
+    scroll: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 24, gap: 14 },
+    sectionTitle: { fontFamily: Fonts.semiBold, fontSize: 16, color: ui.text, letterSpacing: -0.1 },
+    sectionHint: { fontFamily: Fonts.regular, fontSize: 12.5, color: ui.textMuted, marginTop: 2 },
+    sectionGap: { marginTop: 8 },
 
-  chipSelected: {
-    borderColor: PRIMARY,
-    backgroundColor: PRIMARY,
-  },
+    // Waste type grid: two columns, see WasteTypeCard
+    typeGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'space-between',
+      rowGap: 12,
+      marginBottom: 8,
+    },
 
-  // Weekday chips
-  weekRow: {
-    flexDirection: 'row',
-    gap: 6,
-  },
-  weekChip: {
-    flex: 1,
-    backgroundColor: WHITE,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: BORDER,
-    paddingVertical: 10,
-    alignItems: 'center',
-  },
-  weekChipLabel: {
-    fontFamily: 'PlusJakartaSans_600SemiBold',
-    fontSize: 12,
-    color: TEXT,
-  },
+    sizeHint: {
+      fontFamily: Fonts.medium,
+      fontSize: 12.5,
+      color: ui.accent,
+      textAlign: 'center',
+      marginTop: -6,
+    },
 
-  // Slot chips
-  slotGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-  },
-  slotChip: {
-    backgroundColor: WHITE,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: BORDER,
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-  },
-  slotLabel: {
-    fontFamily: 'PlusJakartaSans_500Medium',
-    fontSize: 13,
-    color: TEXT,
-  },
+    // Address
+    addressCard: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: 10,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+    },
+    addressIcon: { marginTop: 2 },
+    addressInput: {
+      flex: 1,
+      fontFamily: Fonts.regular,
+      fontSize: 14,
+      color: ui.text,
+      minHeight: 44,
+      padding: 0,
+      textAlignVertical: 'top',
+    },
 
-  // Address
-  addressInput: {
-    backgroundColor: WHITE,
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: BORDER,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    fontFamily: 'PlusJakartaSans_400Regular',
-    fontSize: 13,
-    color: TEXT,
-    minHeight: 52,
-    textAlignVertical: 'top',
-  },
+    // Plan price summary
+    summary: {
+      backgroundColor: ui.accentSoft,
+      borderRadius: Radius.lg,
+      padding: 14,
+      marginTop: 4,
+      gap: 8,
+    },
+    summaryTop: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+    summaryIcon: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: ui.accent,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    summaryBody: { flex: 1 },
+    summaryPrice: { fontFamily: Fonts.bold, fontSize: 17, color: ui.accentDeep },
+    summaryUnit: { fontFamily: Fonts.medium, fontSize: 13 },
+    summaryText: { fontFamily: Fonts.semiBold, fontSize: 13, color: ui.accentDeep },
+    summaryNote: { fontFamily: Fonts.regular, fontSize: 11.5, color: ui.accentDeep, lineHeight: 16 },
 
-  // Summary
-  summaryBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: '#D1FAE5',
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    marginTop: 18,
-  },
-  summaryText: {
-    fontFamily: 'PlusJakartaSans_600SemiBold',
-    fontSize: 12.5,
-    color: '#047857',
-    flex: 1,
-  },
-
-  // Footer
-  footer: {
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 6,
-    backgroundColor: BG,
-  },
-  saveBtn: {
-    backgroundColor: PRIMARY,
-    borderRadius: 16,
-    paddingVertical: 16,
-    alignItems: 'center',
-    shadowColor: '#047857',
-    shadowOpacity: 0.28,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 6,
-  },
-  saveBtnDisabled: {
-    backgroundColor: '#A7CDBF',
-    shadowOpacity: 0,
-    elevation: 0,
-  },
-  saveBtnText: {
-    fontFamily: 'PlusJakartaSans_600SemiBold',
-    fontSize: 15,
-    color: WHITE,
-  },
-});
+    // Footer
+    footer: { paddingHorizontal: 20, paddingTop: 10, paddingBottom: 8, backgroundColor: ui.bg },
+    ctaDisabled: { opacity: 0.4, shadowOpacity: 0, elevation: 0 },
+    saving: {
+      height: 54,
+      borderRadius: Radius.pill,
+      backgroundColor: ui.accent,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+  });

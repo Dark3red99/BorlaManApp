@@ -65,13 +65,30 @@ export const WASTE_TYPES: WasteTypeMeta[] = [
 export const wasteMeta = (type: WasteType): WasteTypeMeta =>
   WASTE_TYPES.find((w) => w.type === type) ?? WASTE_TYPES[0];
 
-// Rough weight bands so the user never has to guess exact kilos; shared by
-// the request wizard and the recurring-plan setup.
-export type SizeBand = { kg: number; label: string; hint: string };
+// Load sizes, described the way people actually measure waste (bags and
+// wheelie bins) and priced per load — anchored to Accra market rates (Jumeni,
+// 2026: GH₵40–50 on-demand / GH₵30 weekly for a 240L bin, GH₵150 for 1100L).
+// `kg` is the stored key (CollectionRequest.volumeKg) and a rough weight
+// estimate for impact points; it never drives price.
+export type SizeBand = {
+  kg: number;
+  label: string;
+  /** What fits, e.g. "240L bin · 5–6 bags". */
+  hint: string;
+  /** Short container name for lists, e.g. "240L bin". */
+  short: string;
+  /** One-off pickup price before the waste-type multiplier. */
+  onDemandGhs: number;
+  /** Per-pickup price on a recurring plan before the multiplier. */
+  planGhs: number;
+};
 
 export const SIZE_BANDS: SizeBand[] = [
-  { kg: 10, label: 'Small', hint: '1–2 bags' },
-  { kg: 25, label: 'Medium', hint: '3–5 bags' },
-  { kg: 50, label: 'Large', hint: 'Bin / cart load' },
-  { kg: 80, label: 'Extra', hint: 'Bulky load' },
+  { kg: 10, label: 'Small', hint: '1–2 bags', short: '1–2 bags', onDemandGhs: 20, planGhs: 15 },
+  { kg: 25, label: 'Medium', hint: '120L bin · 3–4 bags', short: '120L bin', onDemandGhs: 30, planGhs: 22 },
+  { kg: 50, label: 'Large', hint: '240L bin · 5–6 bags', short: '240L bin', onDemandGhs: 40, planGhs: 30 },
+  { kg: 80, label: 'Bulky', hint: 'Bulky load · up to 1100L', short: 'Bulky load', onDemandGhs: 140, planGhs: 110 },
 ];
+
+export const sizeBand = (kg: number): SizeBand =>
+  SIZE_BANDS.find((b) => b.kg === kg) ?? SIZE_BANDS[SIZE_BANDS.length - 1];

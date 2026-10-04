@@ -13,7 +13,7 @@ import type {
   ScheduleItem,
   WasteType,
 } from '../types/models';
-import { wasteMeta } from '../constants/waste';
+import { pickupPrice, planPrice, type PlanFrequency } from '../constants/pricing';
 import { addDays, startOfDay, toDateKey } from '../utils/datetime';
 import { etaMinutes, haversineKm, moveToward, offsetKm } from '../utils/geo';
 import { StorageKeys, readJson, writeJson } from './storage';
@@ -25,44 +25,18 @@ import { StorageKeys, readJson, writeJson } from './storage';
 // resumes an in-flight pickup instead of losing it.
 
 // ── Pricing ──────────────────────────────────────────────────────
-// Same formula the backend pricing table will use:
-// (base + distance·perKm + weight·perKg) × waste-type multiplier
-export const PRICING = {
-  baseGhs: 8,
-  perKm: 2.5,
-  perKg: 0.5,
-  minimumGhs: 10,
-};
+// Per-load prices live in constants/pricing.ts so the wizard can show the
+// same number live; the backend's POST /quotes will own this table. The
+// pickup point is kept in the signature for zone pricing later.
 
 export async function getQuote(
-  pickup: GeoPoint,
+  _pickup: GeoPoint,
   wasteType: WasteType,
   volumeKg: number,
+  asap: boolean,
 ): Promise<PriceQuote> {
-  const collectors = await getFleet(pickup);
-  const available = collectors.filter((c) => c.status === 'available');
-  const nearestKm = available.length
-    ? Math.min(...available.map((c) => haversineKm(c.currentLocation, pickup)))
-    : 3; // fallback assumption when the whole fleet is busy
-
-  const distanceKm = Math.round(nearestKm * 10) / 10;
-  const multiplier = wasteMeta(wasteType).multiplier;
-  const baseGhs = PRICING.baseGhs;
-  const distanceGhs = distanceKm * PRICING.perKm;
-  const weightGhs = volumeKg * PRICING.perKg;
-  const raw = (baseGhs + distanceGhs + weightGhs) * multiplier;
-  const priceGhs = Math.max(PRICING.minimumGhs, Math.round(raw * 100) / 100);
-
-  return {
-    priceGhs,
-    distanceKm,
-    breakdown: {
-      baseGhs,
-      distanceGhs: Math.round(distanceGhs * 100) / 100,
-      weightGhs: Math.round(weightGhs * 100) / 100,
-      typeMultiplier: multiplier,
-    },
-  };
+  const { sizeGhs, typeMultiplier, priorityGhs, totalGhs } = pickupPrice(volumeKg, wasteType, asap);
+  return { priceGhs: totalGhs, breakdown: { sizeGhs, typeMultiplier, priorityGhs } };
 }
 
 // ── Mock fleet ───────────────────────────────────────────────────
@@ -281,7 +255,8 @@ export type NewRecurringInput = {
   userId: string;
   wasteType: WasteType;
   volumeKg: number;
-  weekday: number; // 0 = Sunday … 6 = Saturday
+  weekdays: number[]; // 0 = Sunday … 6 = Saturday; one plan is stored per day
+  frequency: PlanFrequency;
   hour: number; // pickup window start, 24h
   location: GeoPoint;
   addressText: string;
@@ -291,15 +266,22 @@ async function getAllRecurring(): Promise<RecurringPickup[]> {
   return readJson<RecurringPickup[]>(StorageKeys.recurring, []);
 }
 
-export async function createRecurringPickup(input: NewRecurringInput): Promise<RecurringPickup> {
-  const plan: RecurringPickup = {
+/** Creates one plan per chosen weekday ("twice a week" = two plans) so each
+ *  day can be paused or removed on its own. */
+export async function createRecurringPickup(input: NewRecurringInput): Promise<RecurringPickup[]> {
+  const { weekdays, ...rest } = input;
+  const createdAt = new Date().toISOString();
+  const priceGhs = planPrice(input.volumeKg, input.wasteType);
+  const plans: RecurringPickup[] = weekdays.map((weekday) => ({
+    ...rest,
     id: `rc_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`,
-    ...input,
+    weekday,
+    priceGhs,
     active: true,
-    createdAt: new Date().toISOString(),
-  };
-  await writeJson(StorageKeys.recurring, [...(await getAllRecurring()), plan]);
-  return plan;
+    createdAt,
+  }));
+  await writeJson(StorageKeys.recurring, [...(await getAllRecurring()), ...plans]);
+  return plans;
 }
 
 export async function getRecurringPickups(userId: string): Promise<RecurringPickup[]> {
@@ -356,6 +338,7 @@ export async function getSchedule(
   for (const plan of plans) {
     for (let day = startOfDay(from); day <= to; day = addDays(day, 1)) {
       if (day.getDay() !== plan.weekday) continue;
+      if (plan.frequency === 'biweekly' && !onPlanWeek(plan, day)) continue;
       const at = new Date(day);
       at.setHours(plan.hour, 0, 0, 0);
       if (at < now || at < from || at > to) continue;
@@ -372,6 +355,15 @@ export async function getSchedule(
   }
 
   return items.sort((a, b) => a.at.localeCompare(b.at));
+}
+
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+
+/** Every-2-weeks plans run on the week they were created, then every other week. */
+function onPlanWeek(plan: RecurringPickup, day: Date): boolean {
+  const weekStart = (d: Date) => addDays(startOfDay(d), -d.getDay()).getTime();
+  const weeks = Math.round((weekStart(day) - weekStart(new Date(plan.createdAt))) / WEEK_MS);
+  return weeks % 2 === 0;
 }
 
 export type NextPickup =

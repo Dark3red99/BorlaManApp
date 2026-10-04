@@ -6,7 +6,7 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useAuth } from '../context/AuthContext';
 import * as pickupService from '../services/pickupService';
 import type { RecurringPickup, ScheduleItem } from '../types/models';
-import { wasteMeta } from '../constants/waste';
+import { sizeBand, wasteMeta } from '../constants/waste';
 import { REQUEST_STATUS_META, type StatusMeta } from '../constants/requestStatus';
 import { slotLabel, WEEKDAY_LONG } from '../constants/schedule';
 import { addDays, formatTime, isSameDay, toDateKey } from '../utils/datetime';
@@ -44,6 +44,11 @@ function formatSelectedLabel(selected: Date, today: Date) {
   if (isSameDay(selected, addDays(today, 1))) return 'Tomorrow';
   if (isSameDay(selected, addDays(today, -1))) return 'Yesterday';
   return selected.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+}
+
+/** "Every Monday" / "Every other Monday". */
+function planCadence(plan: RecurringPickup) {
+  return `${plan.frequency === 'biweekly' ? 'Every other' : 'Every'} ${WEEKDAY_LONG[plan.weekday]}`;
 }
 
 export default function ScheduleTab() {
@@ -119,7 +124,7 @@ export default function ScheduleTab() {
   const removePlan = (plan: RecurringPickup) => {
     Alert.alert(
       'Delete recurring pickup?',
-      `Every ${WEEKDAY_LONG[plan.weekday]}, ${slotLabel(plan.hour)} — this can't be undone.`,
+      `${planCadence(plan)}, ${slotLabel(plan.hour)} — this can't be undone.`,
       [
         { text: 'Keep it', style: 'cancel' },
         {
@@ -235,7 +240,7 @@ export default function ScheduleTab() {
       {/* Weekly plans */}
       {plans.length > 0 && (
         <>
-          <SectionHeader title="Weekly plans" meta={`${plans.length}`} />
+          <SectionHeader title="Pickup plans" meta={`${plans.length}`} />
           <Card style={styles.listCard}>
             {plans.map((plan, idx) => {
               const meta = wasteMeta(plan.wasteType);
@@ -245,8 +250,8 @@ export default function ScheduleTab() {
                   left={
                     <IconTile icon={wasteIcon(plan.wasteType)} bg={soft(meta.color, meta.colorSoft)} fg={meta.color} size={42} />
                   }
-                  title={`${meta.label} · ~${plan.volumeKg} kg`}
-                  subtitle={`Every ${WEEKDAY_LONG[plan.weekday]}, ${slotLabel(plan.hour)}`}
+                  title={`${meta.label} · ${sizeBand(plan.volumeKg).short}`}
+                  subtitle={`${planCadence(plan)}, ${slotLabel(plan.hour)}${plan.priceGhs ? ` · GH₵ ${plan.priceGhs}` : ''}`}
                   divider={idx < plans.length - 1}
                   right={
                     <View style={styles.planActions}>
