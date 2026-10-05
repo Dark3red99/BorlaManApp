@@ -1,0 +1,44 @@
+{
+  "expo": {
+    "name": "BorlaMan Rider",
+    "slug": "borlaman-rider",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#0D100F",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.borlaman.rider"
+    },
+    "android": {
+      "package": "com.borlaman.rider",
+      "adaptiveIcon": {
+        "backgroundColor": "#0D100F",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      }
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-font",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "BorlaMan Rider uses your location to show pickups near you and to let customers see you arriving."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "BorlaMan Rider needs photo access to upload your documents.",
+          "cameraPermission": "BorlaMan Rider uses the camera for your verification documents and to photograph waste at pickup as proof of collection."
+        }
+      ],
+      "expo-status-bar"
+    ]
+  }
+}

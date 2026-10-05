@@ -23,9 +23,17 @@ type ThemeValue = {
 
 const ThemeContext = createContext<ThemeValue | null>(null);
 
-export function ThemeProvider({ children }: { children: React.ReactNode }) {
+/** `defaultMode` applies until the user picks one: the customer app follows the
+ *  phone ('system'), the rider app starts dark. */
+export function ThemeProvider({
+  children,
+  defaultMode = 'system',
+}: {
+  children: React.ReactNode;
+  defaultMode?: ThemeMode;
+}) {
   const system = useColorScheme();
-  const [mode, setModeState] = useState<ThemeMode>('system');
+  const [mode, setModeState] = useState<ThemeMode>(defaultMode);
 
   useEffect(() => {
     AsyncStorage.getItem(THEME_MODE_KEY)

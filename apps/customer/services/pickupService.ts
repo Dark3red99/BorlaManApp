@@ -140,9 +140,34 @@ async function saveCollector(collector: Collector): Promise<void> {
   await writeJson(StorageKeys.collectors, fleet);
 }
 
+const isMockCollectorId = (id: string) => id.startsWith('c_');
+
+function riderToCollector(rider: Tables<'riders'>, name: string): Collector {
+  return {
+    id: rider.id,
+    name: name || 'Your rider',
+    vehicle: rider.vehicle_plate ? `Aboboyaa — ${rider.vehicle_plate}` : 'Aboboyaa',
+    rating: Number(rider.rating),
+    status: 'on-job',
+    currentLocation: { latitude: rider.lat ?? 0, longitude: rider.lng ?? 0 },
+    wasteTypes: rider.waste_types,
+  };
+}
+
+/** The collector on a pickup: a real rider (from the database) or, in the
+ *  dev simulation, a mock one. Riders are only readable while they share an
+ *  active job with this customer (row-level security). */
 export async function getCollector(id: string): Promise<Collector | null> {
-  const fleet = await readJson<Collector[]>(StorageKeys.collectors, []);
-  return fleet.find((c) => c.id === id) ?? null;
+  if (isMockCollectorId(id)) {
+    const fleet = await readJson<Collector[]>(StorageKeys.collectors, []);
+    return fleet.find((c) => c.id === id) ?? null;
+  }
+  const [rider, profile] = await Promise.all([
+    supabase.from('riders').select('*').eq('id', id).maybeSingle(),
+    supabase.from('profiles').select('full_name').eq('id', id).maybeSingle(),
+  ]);
+  if (!rider.data) return null;
+  return riderToCollector(rider.data, profile.data?.full_name ?? '');
 }
 
 async function assignSimCollector(requestId: string, collectorId: string) {
@@ -603,10 +628,24 @@ function finishCollecting(request: CollectionRequest, collector: Collector) {
 
 /** Resumes the simulation from wherever the server-side request left off.
  *  Scheduled pickups wait for their slot; only ASAP pickups run right away. */
+let devSimulation: Promise<boolean> | null = null;
+
+/** pricing_settings.dev_simulation: on = fake collector demo, off = real riders only. */
+function isDevSimulationOn(): Promise<boolean> {
+  if (!devSimulation) {
+    devSimulation = Promise.resolve(
+      supabase.from('pricing_settings').select('dev_simulation').single(),
+    ).then(({ data }) => !!data?.dev_simulation, () => false);
+  }
+  return devSimulation;
+}
+
 async function ensureSimulation(request: CollectionRequest) {
   const sim = getSim(request.id);
   const alreadyRunning = sim.timers.length > 0 || sim.interval;
   if (alreadyRunning || !ACTIVE_STATUSES.includes(request.status)) return;
+  // A real rider has the job, or the demo is switched off: nothing to simulate.
+  if ((request.collectorId && !isMockCollectorId(request.collectorId)) || !(await isDevSimulationOn())) return;
   if (request.status === 'pending' && new Date(request.scheduledFor).getTime() > Date.now() + 60_000) return;
 
   const collector = request.collectorId ? await getCollector(request.collectorId) : null;
@@ -650,23 +689,46 @@ export function subscribeToRequest(requestId: string, listener: Listener): () =>
       { event: 'UPDATE', schema: 'public', table: 'pickup_requests', filter: `id=eq.${requestId}` },
       async (payload) => {
         const request = toRequest(payload.new as RequestRow, await getSimAssignments());
+        latest = request;
+        followRider(request.collectorId);
         const collector = request.collectorId ? await getCollector(request.collectorId) : null;
         listener({ request, collector });
       },
     )
     .subscribe();
 
+  // Follows the assigned real rider's position (riders table, Realtime).
+  let latest: CollectionRequest | null = null;
+  let riderChannel: ReturnType<typeof supabase.channel> | null = null;
+  const followRider = (riderId: string | undefined) => {
+    if (!riderId || isMockCollectorId(riderId) || riderChannel) return;
+    riderChannel = supabase
+      .channel(`rider:${riderId}:${Math.random().toString(36).slice(2, 8)}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'riders', filter: `id=eq.${riderId}` },
+        async () => {
+          if (!latest) return;
+          listener({ request: latest, collector: await getCollector(riderId) });
+        },
+      )
+      .subscribe();
+  };
+
   (async () => {
     const request = await getRequest(requestId);
     if (!request) return;
+    latest = request;
     const collector = request.collectorId ? await getCollector(request.collectorId) : null;
     listener({ request, collector });
+    followRider(request.collectorId);
     ensureSimulation(request);
   })();
 
   return () => {
     sim.listeners.delete(listener);
     supabase.removeChannel(channel);
+    if (riderChannel) supabase.removeChannel(riderChannel);
   };
 }
 

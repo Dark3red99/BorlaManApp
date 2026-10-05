@@ -217,6 +217,7 @@ export type Database = {
       pricing_settings: {
         Row: {
           co2_per_kg: number
+          commission_rate: number
           dev_simulation: boolean
           id: boolean
           points_per_kg: number
@@ -225,6 +226,7 @@ export type Database = {
         }
         Insert: {
           co2_per_kg?: number
+          commission_rate?: number
           dev_simulation?: boolean
           id?: boolean
           points_per_kg?: number
@@ -233,6 +235,7 @@ export type Database = {
         }
         Update: {
           co2_per_kg?: number
+          commission_rate?: number
           dev_simulation?: boolean
           id?: boolean
           points_per_kg?: number
@@ -602,6 +605,48 @@ export type Database = {
           p_status: Database["public"]["Enums"]["request_status"]
         }
         Returns: Database["public"]["Tables"]["pickup_requests"]["Row"]
+      }
+      claim_pickup: {
+        Args: { p_request_id: string }
+        Returns: Database["public"]["Tables"]["pickup_requests"]["Row"]
+      }
+      open_pickups_near: {
+        Args: { p_lat: number; p_lng: number; p_radius_m?: number }
+        Returns: {
+          id: string
+          waste_type: Database["public"]["Enums"]["waste_type"]
+          volume_kg: number
+          mode: Database["public"]["Enums"]["dispatch_mode"]
+          scheduled_for: string
+          rider_earnings_ghs: number
+          approx_lat: number
+          approx_lng: number
+          distance_m: number
+        }[]
+      }
+      release_pickup: {
+        Args: { p_request_id: string }
+        Returns: Database["public"]["Tables"]["pickup_requests"]["Row"]
+      }
+      rider_advance_pickup: {
+        Args: {
+          p_request_id: string
+          p_status: Database["public"]["Enums"]["request_status"]
+          p_proof_photo?: string | null
+        }
+        Returns: Database["public"]["Tables"]["pickup_requests"]["Row"]
+      }
+      rider_mark_emptied: {
+        Args: Record<PropertyKey, never>
+        Returns: Database["public"]["Tables"]["riders"]["Row"]
+      }
+      rider_set_online: {
+        Args: { p_online: boolean; p_lat?: number | null; p_lng?: number | null }
+        Returns: Database["public"]["Tables"]["riders"]["Row"]
+      }
+      rider_update_location: {
+        Args: { p_lat: number; p_lng: number }
+        Returns: undefined
       }
       set_collection_point: {
         Args: {
