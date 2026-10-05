@@ -20,6 +20,22 @@ type RiderContextValue = {
 
 const RiderContext = createContext<RiderContextValue | undefined>(undefined);
 
+// DEV ONLY shortcut: with EXPO_PUBLIC_DEV_RIDER_EMAIL/PASSWORD in .env.local,
+// the app signs in as an already-approved test rider so development can
+// skip sign-in, details and verification photos. `__DEV__` is false in
+// release builds, so this never ships.
+const DEV_RIDER_EMAIL = process.env.EXPO_PUBLIC_DEV_RIDER_EMAIL;
+const DEV_RIDER_PASSWORD = process.env.EXPO_PUBLIC_DEV_RIDER_PASSWORD;
+let devSignInTried = false;
+
+async function signInDevRiderIfConfigured() {
+  if (!__DEV__ || devSignInTried || !DEV_RIDER_EMAIL || !DEV_RIDER_PASSWORD) return;
+  devSignInTried = true; // once per launch, so "Sign out" still shows the real screens
+  const { data } = await supabase.auth.getSession();
+  if (data.session) return;
+  await riderService.signIn(DEV_RIDER_EMAIL, DEV_RIDER_PASSWORD).catch(() => {});
+}
+
 function stageFor(me: Awaited<ReturnType<typeof riderService.loadMe>>): Stage {
   if (!me) return 'signed-out';
   if (!me.rider) return 'not-a-rider';
@@ -36,6 +52,7 @@ export function RiderProvider({ children }: { children: React.ReactNode }) {
 
   const refresh = useCallback(async () => {
     try {
+      await signInDevRiderIfConfigured();
       const me = await riderService.loadMe();
       setProfile(me?.profile ?? null);
       setRiderState(me?.rider ?? null);
