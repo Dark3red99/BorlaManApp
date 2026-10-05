@@ -1,0 +1,14 @@
+{
+  "name": "@borlaman/shared",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Code shared by the BorlaMan customer and rider apps: database types, models, pricing, waste data, theme and UI kit. Import by path, e.g. @borlaman/shared/constants/pricing.",
+  "peerDependencies": {
+    "@react-native-async-storage/async-storage": "*",
+    "lucide-react-native": "*",
+    "react": "*",
+    "react-native": "*",
+    "react-native-safe-area-context": "*",
+    "react-native-svg": "*"
+  }
+}

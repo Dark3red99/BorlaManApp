@@ -1,0 +1,86 @@
+import React from 'react';
+import { View } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { StatusBar } from 'expo-status-bar';
+import {
+  useFonts,
+  PlusJakartaSans_400Regular,
+  PlusJakartaSans_500Medium,
+  PlusJakartaSans_600SemiBold,
+  PlusJakartaSans_700Bold,
+  PlusJakartaSans_800ExtraBold,
+} from '@expo-google-fonts/plus-jakarta-sans';
+
+import SplashScreen from './screens/SplashScreen';
+import Onboarding from './screens/Onboarding';
+import Registration from './screens/Registration';
+import SignIn from './screens/SignIn';
+import ForgotPassword from './screens/ForgotPassword';
+import SelectCategory from './screens/SelectCategory';
+import CompleteSignUp from './screens/Completesignup';
+import RegistrationSuccess from './screens/RegistrationSuccess';
+import Dashboard from './screens/Dashboard';
+import SetCollectionPointScreen from './screens/location/SetCollectionPointScreen';
+import RequestPickupScreen from './screens/dispose/RequestPickupScreen';
+import TrackPickupScreen from './screens/dispose/TrackPickupScreen';
+import PickupCompleteScreen from './screens/dispose/PickupCompleteScreen';
+import RecurringPickupScreen from './screens/schedule/RecurringPickupScreen';
+import GuideScreen from './screens/learn/GuideScreen';
+import QuizScreen from './screens/learn/QuizScreen';
+import { Colors } from '@borlaman/shared/constants/theme';
+import { AuthProvider } from './context/AuthContext';
+import { ThemeProvider } from '@borlaman/shared/theme/ThemeContext';
+import type { RootStackParamList } from './types/navigation';
+
+const Stack = createNativeStackNavigator<RootStackParamList>();
+
+export default function App() {
+  const [fontsLoaded] = useFonts({
+    PlusJakartaSans_400Regular,
+    PlusJakartaSans_500Medium,
+    PlusJakartaSans_600SemiBold,
+    PlusJakartaSans_700Bold,
+    PlusJakartaSans_800ExtraBold,
+  });
+
+  if (!fontsLoaded) {
+    return <View style={{ flex: 1, backgroundColor: Colors.primaryDark }} />;
+  }
+
+  return (
+    <SafeAreaProvider>
+      <ThemeProvider>
+      <AuthProvider>
+        <NavigationContainer>
+          <Stack.Navigator
+            id={undefined}
+            screenOptions={{
+              headerShown: false,
+            }}
+          >
+            <Stack.Screen name="Splash" component={SplashScreen} />
+            <Stack.Screen name="Onboarding" component={Onboarding} />
+            <Stack.Screen name="Registration" component={Registration} />
+            <Stack.Screen name="SignIn" component={SignIn} />
+            <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
+            <Stack.Screen name="SelectCategory" component={SelectCategory} />
+            <Stack.Screen name="CompleteSignUp" component={CompleteSignUp} />
+            <Stack.Screen name="RegistrationSuccess" component={RegistrationSuccess} />
+            <Stack.Screen name="Dashboard" component={Dashboard} />
+            <Stack.Screen name="SetCollectionPoint" component={SetCollectionPointScreen} />
+            <Stack.Screen name="RequestPickup" component={RequestPickupScreen} />
+            <Stack.Screen name="TrackPickup" component={TrackPickupScreen} />
+            <Stack.Screen name="PickupComplete" component={PickupCompleteScreen} />
+            <Stack.Screen name="RecurringPickup" component={RecurringPickupScreen} />
+            <Stack.Screen name="Guide" component={GuideScreen} />
+            <Stack.Screen name="Quiz" component={QuizScreen} />
+          </Stack.Navigator>
+          <StatusBar style="light" />
+        </NavigationContainer>
+      </AuthProvider>
+      </ThemeProvider>
+    </SafeAreaProvider>
+  );
+}

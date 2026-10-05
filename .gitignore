@@ -36,9 +36,9 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
-# generated native folders
-/ios
-/android
+# generated native folders (in every app)
+ios/
+android/
 
 # Claude Code third-party skills (vendored tooling, not project source)
 .claude/skills/ui-ux-pro-max/
