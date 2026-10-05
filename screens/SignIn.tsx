@@ -88,18 +88,19 @@ export default function SignIn({ navigation }: RootStackScreenProps<'SignIn'>) {
 
               {/* Form */}
               <View style={styles.form}>
-                {/* Email or Phone */}
+                {/* Email */}
                 <View style={styles.inputWrapper}>
                   <TextInput
                     style={[styles.input, styles.inputWithLeadingIcon]}
-                    placeholder="Email or phone number"
+                    placeholder="Email address"
                     placeholderTextColor={D.textFaint}
                     value={identifier}
                     onChangeText={(v) => { setIdentifier(v); setError(null); }}
                     autoCapitalize="none"
                     autoCorrect={false}
-                    textContentType="username"
-                    autoComplete="username"
+                    keyboardType="email-address"
+                    textContentType="emailAddress"
+                    autoComplete="email"
                     returnKeyType="next"
                   />
                   <View style={styles.leadingIcon} pointerEvents="none">

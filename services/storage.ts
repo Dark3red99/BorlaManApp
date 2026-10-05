@@ -9,6 +9,7 @@ export const StorageKeys = {
   session: '@borlaman/session', // id of the signed-in user
   requests: '@borlaman/requests',
   collectors: '@borlaman/collectors', // mock fleet, seeded around the first pickup point
+  simAssignments: '@borlaman/simAssignments', // requestId → mock collector id (dev simulation)
   payments: '@borlaman/payments',
   ratings: '@borlaman/ratings',
   recurring: '@borlaman/recurring', // standing weekly pickup plans

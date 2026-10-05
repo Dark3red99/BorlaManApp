@@ -1,14 +1,10 @@
 import type { Address, User, UserCategory } from '../types/models';
-import { StorageKeys, readJson, writeJson, writeManyJson, readManyJson, remove } from './storage';
+import type { Tables } from '../types/database';
+import { supabase } from './supabase';
 
-// Mock auth service. The function signatures are the contract the real
-// backend will implement (POST /auth/register, POST /auth/login, ...);
-// only the bodies change when the API exists.
-//
-// MOCK ONLY: accounts live on-device in AsyncStorage and passwords are
-// stored as-is. This must be replaced by the backend before any release.
-
-type StoredUser = User & { password: string };
+// Auth on Supabase (email + password). The profile row is created by the
+// handle_new_user trigger from the sign-up metadata; this service maps it
+// to the app's User shape so screens don't change.
 
 export class AuthError extends Error {
   constructor(
@@ -16,7 +12,10 @@ export class AuthError extends Error {
       | 'phone-taken'
       | 'email-taken'
       | 'invalid-credentials'
-      | 'not-found',
+      | 'email-not-confirmed'
+      | 'not-found'
+      | 'invalid-code'
+      | 'network',
     message: string,
   ) {
     super(message);
@@ -42,82 +41,159 @@ export function normalizePhone(phone: string): string {
   return `+233${digits}`;
 }
 
-function toPublicUser({ password: _password, ...user }: StoredUser): User {
-  return user;
+type Profile = Tables<'profiles'>;
+
+function toUser(p: Profile): User {
+  return {
+    id: p.id,
+    fullName: p.full_name,
+    phone: p.phone ?? '',
+    email: p.email ?? '',
+    // 'aboboyaa' sign-ups belong in the rider app; customers are household/corporate.
+    category: p.category ?? 'household',
+    address: {
+      region: p.region ?? '',
+      district: p.district ?? '',
+      addressLine: p.address_line ?? '',
+      area: p.area ?? '',
+      gpsText: p.gps_text ?? undefined,
+    },
+    createdAt: p.created_at,
+  };
 }
 
-async function getStoredUsers(): Promise<StoredUser[]> {
-  return readJson<StoredUser[]>(StorageKeys.users, []);
+async function loadProfile(userId: string): Promise<User> {
+  const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).single();
+  if (error || !data) throw new AuthError('not-found', 'Your profile could not be loaded. Please sign in again.');
+  return toUser(data);
+}
+
+function isNetworkError(message: string) {
+  return /network|fetch/i.test(message);
 }
 
 export async function register(input: RegisterInput): Promise<User> {
-  const users = await getStoredUsers();
-  const phone = normalizePhone(input.phone);
   const email = input.email.trim().toLowerCase();
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password: input.password,
+    options: {
+      data: {
+        role: 'customer',
+        full_name: input.fullName.trim(),
+        phone: normalizePhone(input.phone),
+        category: input.category,
+        region: input.address.region,
+        district: input.address.district,
+        address_line: input.address.addressLine,
+        area: input.address.area,
+        gps_text: input.address.gpsText ?? '',
+      },
+    },
+  });
 
-  if (users.some((u) => u.phone === phone)) {
-    throw new AuthError('phone-taken', 'An account with this phone number already exists.');
+  if (error) {
+    if (/already registered|already exists/i.test(error.message)) {
+      throw new AuthError('email-taken', 'An account with this email already exists.');
+    }
+    // The profiles.phone unique constraint fails inside the sign-up trigger.
+    if (/database error saving new user/i.test(error.message)) {
+      throw new AuthError('phone-taken', 'An account with this phone number already exists.');
+    }
+    if (isNetworkError(error.message)) {
+      throw new AuthError('network', 'No connection. Check your internet and try again.');
+    }
+    throw new AuthError('invalid-credentials', error.message);
   }
-  if (users.some((u) => u.email === email)) {
+  // Supabase returns a user with no identities when the email is already taken
+  // and email confirmation is on (it hides whether the account exists).
+  if (data.user && data.user.identities?.length === 0) {
     throw new AuthError('email-taken', 'An account with this email already exists.');
   }
-
-  const user: StoredUser = {
-    id: `u_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`,
-    fullName: input.fullName.trim(),
-    phone,
-    email,
-    category: input.category,
-    address: input.address,
-    createdAt: new Date().toISOString(),
-    password: input.password,
-  };
-
-  await writeManyJson([
-    [StorageKeys.users, [...users, user]],
-    [StorageKeys.session, user.id],
-  ]);
-  return toPublicUser(user);
+  if (!data.session || !data.user) {
+    throw new AuthError(
+      'email-not-confirmed',
+      'Account created. Check your email to confirm it, then sign in.',
+    );
+  }
+  return loadProfile(data.user.id);
 }
 
-/** Signs in with email or phone number plus password. */
-export async function signIn(identifier: string, password: string): Promise<User> {
-  const users = await getStoredUsers();
-  const id = identifier.trim();
-  const byEmail = id.toLowerCase();
-  const byPhone = normalizePhone(id);
-
-  const user = users.find((u) => u.email === byEmail || u.phone === byPhone);
-  if (!user || user.password !== password) {
-    throw new AuthError('invalid-credentials', 'Incorrect email/phone or password.');
+/** Signs in with email + password. */
+export async function signIn(email: string, password: string): Promise<User> {
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email: email.trim().toLowerCase(),
+    password,
+  });
+  if (error || !data.user) {
+    const message = error?.message ?? '';
+    if (/not confirmed/i.test(message)) {
+      throw new AuthError('email-not-confirmed', 'Confirm your email first. Check your inbox for the link.');
+    }
+    if (isNetworkError(message)) {
+      throw new AuthError('network', 'No connection. Check your internet and try again.');
+    }
+    throw new AuthError('invalid-credentials', 'Incorrect email or password.');
   }
-
-  await writeJson(StorageKeys.session, user.id);
-  return toPublicUser(user);
+  return loadProfile(data.user.id);
 }
 
 export async function signOut(): Promise<void> {
-  await remove(StorageKeys.session);
+  await supabase.auth.signOut();
 }
 
-/** Restores the signed-in user from the persisted session, if any. */
+/** Restores the signed-in user from the persisted Supabase session, if any. */
 export async function getCurrentUser(): Promise<User | null> {
-  const { [StorageKeys.session]: sessionId, [StorageKeys.users]: users } = await readManyJson({
-    [StorageKeys.session]: null as string | null,
-    [StorageKeys.users]: [] as StoredUser[],
-  });
-  if (!sessionId) return null;
-  const user = users.find((u) => u.id === sessionId);
-  return user ? toPublicUser(user) : null;
+  const { data } = await supabase.auth.getSession();
+  const userId = data.session?.user.id;
+  if (!userId) return null;
+  try {
+    return await loadProfile(userId);
+  } catch {
+    return null;
+  }
 }
 
-export async function resetPassword(phone: string, newPassword: string): Promise<void> {
-  const users = await getStoredUsers();
-  const normalized = normalizePhone(phone);
-  const idx = users.findIndex((u) => u.phone === normalized);
-  if (idx === -1) {
-    throw new AuthError('not-found', 'No account found with this phone number.');
+/** Calls back with null whenever the session ends (sign-out, expiry, deletion). */
+export function onSignedOut(callback: () => void): () => void {
+  const { data } = supabase.auth.onAuthStateChange((event, session) => {
+    if (event === 'SIGNED_OUT' || (!session && event !== 'INITIAL_SESSION')) callback();
+  });
+  return () => data.subscription.unsubscribe();
+}
+
+// ── Password reset: email code → verify → new password ─────────────
+// Uses Supabase email OTP. The "Magic Link" email template must include
+// {{ .Token }} so the email shows the 6-digit code.
+
+export async function sendResetCode(email: string): Promise<void> {
+  const { error } = await supabase.auth.signInWithOtp({
+    email: email.trim().toLowerCase(),
+    options: { shouldCreateUser: false },
+  });
+  if (error) {
+    if (isNetworkError(error.message)) {
+      throw new AuthError('network', 'No connection. Check your internet and try again.');
+    }
+    if (/signups not allowed|not found/i.test(error.message)) {
+      throw new AuthError('not-found', 'No account found with this email.');
+    }
+    throw new AuthError('not-found', error.message);
   }
-  users[idx] = { ...users[idx], password: newPassword };
-  await writeJson(StorageKeys.users, users);
+}
+
+export async function verifyResetCode(email: string, code: string): Promise<void> {
+  const { error } = await supabase.auth.verifyOtp({
+    email: email.trim().toLowerCase(),
+    token: code,
+    type: 'email',
+  });
+  if (error) throw new AuthError('invalid-code', 'That code is wrong or has expired.');
+}
+
+/** Sets the new password on the session opened by verifyResetCode, then signs out. */
+export async function setNewPassword(newPassword: string): Promise<void> {
+  const { error } = await supabase.auth.updateUser({ password: newPassword });
+  await supabase.auth.signOut();
+  if (error) throw new AuthError('invalid-credentials', error.message);
 }

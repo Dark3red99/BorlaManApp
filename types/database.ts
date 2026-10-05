@@ -21,6 +21,8 @@ export type Database = {
         Row: {
           gps_text: string | null
           label: string
+          lat: number | null
+          lng: number | null
           location: unknown
           source: Database["public"]["Enums"]["location_source"]
           updated_at: string
@@ -65,6 +67,8 @@ export type Database = {
           customer_id: string
           en_route_at: string | null
           id: string
+          lat: number | null
+          lng: number | null
           location: unknown
           mode: Database["public"]["Enums"]["dispatch_mode"]
           photos: string[]
@@ -213,6 +217,7 @@ export type Database = {
       pricing_settings: {
         Row: {
           co2_per_kg: number
+          dev_simulation: boolean
           id: boolean
           points_per_kg: number
           priority_fee_ghs: number
@@ -220,6 +225,7 @@ export type Database = {
         }
         Insert: {
           co2_per_kg?: number
+          dev_simulation?: boolean
           id?: boolean
           points_per_kg?: number
           priority_fee_ghs?: number
@@ -227,6 +233,7 @@ export type Database = {
         }
         Update: {
           co2_per_kg?: number
+          dev_simulation?: boolean
           id?: boolean
           points_per_kg?: number
           priority_fee_ghs?: number
@@ -243,6 +250,7 @@ export type Database = {
           district: string | null
           email: string | null
           full_name: string
+          gps_text: string | null
           id: string
           phone: string | null
           region: string | null
@@ -257,6 +265,7 @@ export type Database = {
           district?: string | null
           email?: string | null
           full_name?: string
+          gps_text?: string | null
           id: string
           phone?: string | null
           region?: string | null
@@ -271,6 +280,7 @@ export type Database = {
           district?: string | null
           email?: string | null
           full_name?: string
+          gps_text?: string | null
           id?: string
           phone?: string | null
           region?: string | null
@@ -329,6 +339,8 @@ export type Database = {
           frequency: Database["public"]["Enums"]["plan_frequency"]
           hour: number
           id: string
+          lat: number | null
+          lng: number | null
           location: unknown
           price_ghs: number
           volume_kg: number
@@ -424,6 +436,8 @@ export type Database = {
           id: string
           is_online: boolean
           load_kg: number
+          lat: number | null
+          lng: number | null
           location: unknown
           location_updated_at: string | null
           payout_momo: string | null
@@ -581,6 +595,30 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      dev_advance_request: {
+        Args: {
+          p_request_id: string
+          p_status: Database["public"]["Enums"]["request_status"]
+        }
+        Returns: Database["public"]["Tables"]["pickup_requests"]["Row"]
+      }
+      set_collection_point: {
+        Args: {
+          p_lat: number
+          p_lng: number
+          p_label: string
+          p_gps_text?: string | null
+          p_source?: Database["public"]["Enums"]["location_source"]
+        }
+        Returns: Database["public"]["Tables"]["collection_points"]["Row"]
+      }
+      submit_quiz: {
+        Args: { p_quiz_id: string; p_correct: number; p_total: number }
+        Returns: {
+          result: Database["public"]["Tables"]["quiz_results"]["Row"]
+          points_awarded: number
+        }[]
       }
       plan_price: {
         Args: {

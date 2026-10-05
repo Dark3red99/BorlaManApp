@@ -6,28 +6,82 @@ import type {
   Payment,
   PaymentMethod,
   PriceQuote,
-  QuizResult,
   Rating,
   RecurringPickup,
   RequestStatus,
   ScheduleItem,
   WasteType,
 } from '../types/models';
-import { pickupPrice, planPrice, type PlanFrequency } from '../constants/pricing';
+import type { Enums, Tables } from '../types/database';
+import { pickupPrice, type PlanFrequency } from '../constants/pricing';
 import { addDays, startOfDay, toDateKey } from '../utils/datetime';
 import { etaMinutes, haversineKm, moveToward, offsetKm } from '../utils/geo';
 import { StorageKeys, readJson, writeJson } from './storage';
+import { supabase } from './supabase';
 
-// Mock pickup service. Function signatures are the contract the real backend
-// will implement (POST /quotes, POST /requests, Socket.IO `request:update`);
-// only the bodies change when the API exists. The "live" collector movement
-// is a timer-driven simulation persisted to AsyncStorage so an app restart
-// resumes an in-flight pickup instead of losing it.
+// Pickup service on Supabase. Requests, plans, schedule and points are real
+// rows; prices and status changes happen in server functions (see
+// supabase/migrations). Until the rider app exists, a dev-only simulation
+// walks each pickup through its statuses via dev_advance_request, with a
+// mock collector for the map. Payments and ratings stay on-device until the
+// payments phase.
+
+// ── Row ↔ app mapping ────────────────────────────────────────────
+
+type RequestRow = Tables<'pickup_requests'>;
+type DbStatus = Enums<'request_status'>;
+
+const STATUS_FROM_DB: Record<DbStatus, RequestStatus> = {
+  pending: 'pending',
+  claimed: 'matched',
+  en_route: 'en-route',
+  arrived: 'arrived',
+  collecting: 'collecting',
+  completed: 'completed',
+  cancelled: 'cancelled',
+};
+const STATUS_TO_DB: Record<RequestStatus, DbStatus> = {
+  pending: 'pending',
+  matched: 'claimed',
+  'en-route': 'en_route',
+  arrived: 'arrived',
+  collecting: 'collecting',
+  completed: 'completed',
+  cancelled: 'cancelled',
+};
+
+let simAssignments: Record<string, string> | null = null;
+
+async function getSimAssignments(): Promise<Record<string, string>> {
+  if (!simAssignments) simAssignments = await readJson<Record<string, string>>(StorageKeys.simAssignments, {});
+  return simAssignments;
+}
+
+function toRequest(row: RequestRow, assignments: Record<string, string> = simAssignments ?? {}): CollectionRequest {
+  return {
+    id: row.id,
+    userId: row.customer_id,
+    collectorId: row.rider_id ?? assignments[row.id],
+    wasteType: row.waste_type,
+    volumeKg: row.volume_kg,
+    photos: row.photos,
+    location: { latitude: row.lat ?? 0, longitude: row.lng ?? 0 },
+    addressText: row.address_text,
+    scheduledFor: row.scheduled_for,
+    status: STATUS_FROM_DB[row.status],
+    priceGhs: Number(row.price_ghs),
+    createdAt: row.created_at,
+    completedAt: row.completed_at ?? undefined,
+  };
+}
+
+function fail(error: { message: string } | null, fallback: string): never {
+  throw new Error(error?.message || fallback);
+}
 
 // ── Pricing ──────────────────────────────────────────────────────
-// Per-load prices live in constants/pricing.ts so the wizard can show the
-// same number live; the backend's POST /quotes will own this table. The
-// pickup point is kept in the signature for zone pricing later.
+// The wizard shows constants/pricing.ts live; the server recomputes the same
+// numbers in create_pickup_request, so what's charged is always the server's.
 
 export async function getQuote(
   _pickup: GeoPoint,
@@ -39,7 +93,7 @@ export async function getQuote(
   return { priceGhs: totalGhs, breakdown: { sizeGhs, typeMultiplier, priorityGhs } };
 }
 
-// ── Mock fleet ───────────────────────────────────────────────────
+// ── Mock fleet (dev simulation only) ─────────────────────────────
 
 const COLLECTOR_SEEDS = [
   { name: 'Kwame Boateng', vehicle: 'Aboboyaa — GR 4521-23', rating: 4.8 },
@@ -91,6 +145,33 @@ export async function getCollector(id: string): Promise<Collector | null> {
   return fleet.find((c) => c.id === id) ?? null;
 }
 
+async function assignSimCollector(requestId: string, collectorId: string) {
+  const all = await getSimAssignments();
+  simAssignments = { ...all, [requestId]: collectorId };
+  await writeJson(StorageKeys.simAssignments, simAssignments);
+}
+
+// ── Photos ───────────────────────────────────────────────────────
+
+/** Uploads local photo URIs to the private pickup-photos bucket; returns storage paths.
+ *  A failed upload is skipped rather than blocking the request. */
+async function uploadPhotos(userId: string, uris: string[]): Promise<string[]> {
+  const paths: string[] = [];
+  for (const [i, uri] of uris.entries()) {
+    try {
+      const body = await (await fetch(uri)).arrayBuffer();
+      const path = `${userId}/${Date.now().toString(36)}_${i}.jpg`;
+      const { error } = await supabase.storage
+        .from('pickup-photos')
+        .upload(path, body, { contentType: 'image/jpeg' });
+      if (!error) paths.push(path);
+    } catch {
+      // keep going; photos are optional
+    }
+  }
+  return paths;
+}
+
 // ── Requests ─────────────────────────────────────────────────────
 
 export type NewRequestInput = {
@@ -101,56 +182,46 @@ export type NewRequestInput = {
   location: GeoPoint;
   addressText: string;
   scheduledFor: string; // ISO; "now" for ASAP requests
-  priceGhs: number; // the quote the user accepted
+  asap: boolean;
+  priceGhs: number; // the quote the user saw; the server's price is what's stored
 };
 
 const ACTIVE_STATUSES: RequestStatus[] = ['pending', 'matched', 'en-route', 'arrived', 'collecting'];
 
-async function getAllRequests(): Promise<CollectionRequest[]> {
-  return readJson<CollectionRequest[]>(StorageKeys.requests, []);
-}
-
-async function saveRequest(request: CollectionRequest): Promise<void> {
-  const all = await getAllRequests();
-  const idx = all.findIndex((r) => r.id === request.id);
-  if (idx === -1) all.push(request);
-  else all[idx] = request;
-  await writeJson(StorageKeys.requests, all);
-}
-
 export async function createRequest(input: NewRequestInput): Promise<CollectionRequest> {
-  const active = await getActiveRequest(input.userId);
-  if (active) {
-    throw new Error('You already have a pickup in progress. Complete or cancel it first.');
-  }
-  const request: CollectionRequest = {
-    id: `r_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`,
-    userId: input.userId,
-    wasteType: input.wasteType,
-    volumeKg: input.volumeKg,
-    photos: input.photos,
-    location: input.location,
-    addressText: input.addressText,
-    scheduledFor: input.scheduledFor,
-    status: 'pending',
-    priceGhs: input.priceGhs,
-    createdAt: new Date().toISOString(),
-  };
-  await saveRequest(request);
+  const photos = await uploadPhotos(input.userId, input.photos);
+  const { data, error } = await supabase.rpc('create_pickup_request', {
+    p_waste_type: input.wasteType,
+    p_volume_kg: input.volumeKg,
+    p_lat: input.location.latitude,
+    p_lng: input.location.longitude,
+    p_address_text: input.addressText,
+    p_asap: input.asap,
+    p_scheduled_for: input.asap ? undefined : input.scheduledFor,
+    p_photos: photos,
+  });
+  if (error || !data) fail(error, 'Could not create the pickup.');
+  const request = toRequest(data, await getSimAssignments());
   ensureSimulation(request);
   return request;
 }
 
-export async function getRequests(userId: string): Promise<CollectionRequest[]> {
-  const all = await getAllRequests();
-  return all
-    .filter((r) => r.userId === userId)
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+export async function getRequests(_userId: string): Promise<CollectionRequest[]> {
+  const [{ data, error }, assignments] = await Promise.all([
+    supabase.from('pickup_requests').select('*').order('created_at', { ascending: false }),
+    getSimAssignments(),
+  ]);
+  if (error) fail(error, 'Could not load your pickups.');
+  return (data ?? []).map((r) => toRequest(r, assignments));
 }
 
 export async function getRequest(id: string): Promise<CollectionRequest | null> {
-  const all = await getAllRequests();
-  return all.find((r) => r.id === id) ?? null;
+  const [{ data, error }, assignments] = await Promise.all([
+    supabase.from('pickup_requests').select('*').eq('id', id).maybeSingle(),
+    getSimAssignments(),
+  ]);
+  if (error) fail(error, 'Could not load the pickup.');
+  return data ? toRequest(data, assignments) : null;
 }
 
 export async function getActiveRequest(userId: string): Promise<CollectionRequest | null> {
@@ -160,19 +231,18 @@ export async function getActiveRequest(userId: string): Promise<CollectionReques
 
 export async function cancelRequest(id: string): Promise<CollectionRequest | null> {
   stopSimulation(id);
-  const request = await getRequest(id);
-  if (!request || !ACTIVE_STATUSES.includes(request.status)) return request;
-  const cancelled: CollectionRequest = { ...request, status: 'cancelled' };
-  await saveRequest(cancelled);
-  if (request.collectorId) {
-    const collector = await getCollector(request.collectorId);
+  const { data, error } = await supabase.rpc('cancel_pickup_request', { p_request_id: id });
+  if (error || !data) return getRequest(id); // already past the cancellable stage
+  const cancelled = toRequest(data, await getSimAssignments());
+  if (cancelled.collectorId) {
+    const collector = await getCollector(cancelled.collectorId);
     if (collector) await saveCollector({ ...collector, status: 'available' });
   }
   notify(id, cancelled, null);
   return cancelled;
 }
 
-// ── Payments & ratings ───────────────────────────────────────────
+// ── Payments & ratings (on-device until the payments phase) ──────
 
 export async function recordPayment(
   requestId: string,
@@ -185,7 +255,7 @@ export async function recordPayment(
     requestId,
     amountGhs,
     method,
-    status: 'paid', // mock — MoMo/card confirm instantly until the backend exists
+    status: 'paid', // mock — MoMo/card confirm instantly until payments exist
     createdAt: new Date().toISOString(),
   };
   await writeJson(StorageKeys.payments, [...payments, payment]);
@@ -219,7 +289,8 @@ export async function submitRating(
 }
 
 // ── Impact ───────────────────────────────────────────────────────
-// Mock conversion factors; the backend impact service will own these.
+// Mirrors pricing_settings (points_per_kg, co2_per_kg); the server awards the
+// actual points into points_entries when a pickup completes.
 export const IMPACT = {
   pointsPerKg: 6,
   co2PerKg: 0.4, // kg CO₂ avoided per kg diverted from open dumping/burning
@@ -229,23 +300,19 @@ export function pointsForPickup(volumeKg: number): number {
   return Math.round(volumeKg * IMPACT.pointsPerKg);
 }
 
-export async function getImpactStats(userId: string): Promise<ImpactStats> {
-  const completed = (await getRequests(userId)).filter((r) => r.status === 'completed');
-  const totalKg = completed.reduce((sum, r) => sum + r.volumeKg, 0);
-  // summed per pickup so the total matches the points shown on each receipt
-  const pickupPoints = completed.reduce((sum, r) => sum + pointsForPickup(r.volumeKg), 0);
-  // Learn & Earn quiz points share this balance; read straight from storage
-  // (not learnService) to keep the service dependency one-way. The backend
-  // /me/impact will join both sources server-side.
-  const quizResults = await readJson<QuizResult[]>(StorageKeys.quizResults, []);
-  const quizPoints = quizResults
-    .filter((q) => q.userId === userId)
-    .reduce((sum, q) => sum + q.pointsEarned, 0);
+export async function getImpactStats(_userId: string): Promise<ImpactStats> {
+  const [completed, points] = await Promise.all([
+    supabase.from('pickup_requests').select('volume_kg').eq('status', 'completed'),
+    supabase.from('points_entries').select('points'),
+  ]);
+  if (completed.error) fail(completed.error, 'Could not load your impact.');
+  if (points.error) fail(points.error, 'Could not load your points.');
+  const totalKg = (completed.data ?? []).reduce((sum, r) => sum + r.volume_kg, 0);
   return {
     totalKg,
     co2OffsetKg: Math.round(totalKg * IMPACT.co2PerKg),
-    points: pickupPoints + quizPoints,
-    completedCount: completed.length,
+    points: (points.data ?? []).reduce((sum, p) => sum + p.points, 0),
+    completedCount: completed.data?.length ?? 0,
   };
 }
 
@@ -262,50 +329,64 @@ export type NewRecurringInput = {
   addressText: string;
 };
 
-async function getAllRecurring(): Promise<RecurringPickup[]> {
-  return readJson<RecurringPickup[]>(StorageKeys.recurring, []);
+function toPlan(row: Tables<'recurring_plans'>): RecurringPickup {
+  return {
+    id: row.id,
+    userId: row.customer_id,
+    wasteType: row.waste_type,
+    volumeKg: row.volume_kg,
+    weekday: row.weekday,
+    hour: row.hour,
+    frequency: row.frequency,
+    priceGhs: Number(row.price_ghs),
+    location: { latitude: row.lat ?? 0, longitude: row.lng ?? 0 },
+    addressText: row.address_text,
+    active: row.active,
+    createdAt: row.created_at,
+  };
 }
 
 /** Creates one plan per chosen weekday ("twice a week" = two plans) so each
- *  day can be paused or removed on its own. */
+ *  day can be paused or removed on its own. Priced on the server. */
 export async function createRecurringPickup(input: NewRecurringInput): Promise<RecurringPickup[]> {
-  const { weekdays, ...rest } = input;
-  const createdAt = new Date().toISOString();
-  const priceGhs = planPrice(input.volumeKg, input.wasteType);
-  const plans: RecurringPickup[] = weekdays.map((weekday) => ({
-    ...rest,
-    id: `rc_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`,
-    weekday,
-    priceGhs,
-    active: true,
-    createdAt,
-  }));
-  await writeJson(StorageKeys.recurring, [...(await getAllRecurring()), ...plans]);
-  return plans;
+  const { data, error } = await supabase.rpc('create_recurring_plans', {
+    p_waste_type: input.wasteType,
+    p_volume_kg: input.volumeKg,
+    p_weekdays: input.weekdays,
+    p_hour: input.hour,
+    p_frequency: input.frequency,
+    p_lat: input.location.latitude,
+    p_lng: input.location.longitude,
+    p_address_text: input.addressText,
+  });
+  if (error || !data) fail(error, 'Could not save the plan.');
+  return data.map(toPlan);
 }
 
-export async function getRecurringPickups(userId: string): Promise<RecurringPickup[]> {
-  const all = await getAllRecurring();
-  return all
-    .filter((p) => p.userId === userId)
-    .sort((a, b) => a.weekday - b.weekday || a.hour - b.hour);
+export async function getRecurringPickups(_userId: string): Promise<RecurringPickup[]> {
+  const { data, error } = await supabase
+    .from('recurring_plans')
+    .select('*')
+    .order('weekday')
+    .order('hour');
+  if (error) fail(error, 'Could not load your plans.');
+  return (data ?? []).map(toPlan);
 }
 
 export async function setRecurringActive(id: string, active: boolean): Promise<void> {
-  const all = await getAllRecurring();
-  await writeJson(StorageKeys.recurring, all.map((p) => (p.id === id ? { ...p, active } : p)));
+  const { error } = await supabase.from('recurring_plans').update({ active }).eq('id', id);
+  if (error) fail(error, 'Could not update the plan.');
 }
 
 export async function deleteRecurringPickup(id: string): Promise<void> {
-  const all = await getAllRecurring();
-  await writeJson(StorageKeys.recurring, all.filter((p) => p.id !== id));
+  const { error } = await supabase.from('recurring_plans').delete().eq('id', id);
+  if (error) fail(error, 'Could not delete the plan.');
 }
 
 // ── Schedule feed ────────────────────────────────────────────────
-// Merges real requests with projected occurrences of active recurring plans
-// (the future GET /me/schedule?from&to). Occurrences are projected forward
-// only — the mock never backfills plan slots that already passed; the real
-// backend will materialize requests from plans instead.
+// Merges real requests with projected occurrences of active recurring plans.
+// Occurrences are projected forward only; the server will materialize real
+// requests from plans in the dispatch phase.
 
 export async function getSchedule(
   userId: string,
@@ -317,7 +398,7 @@ export async function getSchedule(
   const now = new Date();
   const items: ScheduleItem[] = [];
 
-  const requests = await getRequests(userId);
+  const [requests, allPlans] = await Promise.all([getRequests(userId), getRecurringPickups(userId)]);
   for (const r of requests) {
     if (r.status === 'cancelled') continue;
     const at = new Date(r.scheduledFor);
@@ -334,7 +415,7 @@ export async function getSchedule(
     });
   }
 
-  const plans = (await getRecurringPickups(userId)).filter((p) => p.active);
+  const plans = allPlans.filter((p) => p.active);
   for (const plan of plans) {
     for (let day = startOfDay(from); day <= to; day = addDays(day, 1)) {
       if (day.getDay() !== plan.weekday) continue;
@@ -381,10 +462,10 @@ export async function getNextPickup(userId: string): Promise<NextPickup | null> 
   return upcoming ? { kind: 'upcoming', item: upcoming } : null;
 }
 
-// ── Live tracking simulation ─────────────────────────────────────
-// Stands in for the Socket.IO `request:update` channel. Subscribers get the
-// latest request + collector (with a moving currentLocation) until the
-// request reaches a terminal status.
+// ── Live updates + dev simulation ────────────────────────────────
+// Status changes arrive over Supabase Realtime. While the rider app doesn't
+// exist, the simulation below advances the pickup on the server
+// (dev_advance_request) and animates a mock collector between steps.
 
 export type RequestUpdate = {
   request: CollectionRequest;
@@ -434,19 +515,17 @@ function schedule(sim: SimState, ms: number, fn: () => void) {
   sim.timers.push(setTimeout(fn, ms));
 }
 
-async function setStatus(
-  requestId: string,
-  status: RequestStatus,
-  extra?: Partial<CollectionRequest>,
-): Promise<CollectionRequest | null> {
-  const request = await getRequest(requestId);
-  if (!request || !ACTIVE_STATUSES.includes(request.status)) return null; // cancelled meanwhile
-  const updated: CollectionRequest = { ...request, ...extra, status };
-  await saveRequest(updated);
-  return updated;
+/** Advances the pickup one step on the server; null if it didn't move (e.g. cancelled). */
+async function setStatus(requestId: string, status: RequestStatus): Promise<CollectionRequest | null> {
+  const { data, error } = await supabase.rpc('dev_advance_request', {
+    p_request_id: requestId,
+    p_status: STATUS_TO_DB[status],
+  });
+  if (error || !data || STATUS_FROM_DB[data.status] !== status) return null;
+  return toRequest(data, await getSimAssignments());
 }
 
-/** pending → matched: pick the nearest available collector after a short search. */
+/** pending → matched: pick the nearest available mock collector after a short search. */
 function runMatching(request: CollectionRequest) {
   const sim = getSim(request.id);
   schedule(sim, MATCH_DELAY_MS, async () => {
@@ -461,7 +540,8 @@ function runMatching(request: CollectionRequest) {
     const collector = available[0] ?? fleet[0]; // mock never truly fails to match
     const busy: Collector = { ...collector, status: 'on-job' };
     await saveCollector(busy);
-    const matched = await setStatus(request.id, 'matched', { collectorId: busy.id });
+    await assignSimCollector(request.id, busy.id);
+    const matched = await setStatus(request.id, 'matched');
     if (!matched) return;
     notify(request.id, matched, busy);
 
@@ -487,12 +567,7 @@ function runTrip(request: CollectionRequest, collector: Collector) {
     const arrived = haversineKm(position, request.location) < 0.01;
 
     if (!arrived) {
-      const current = await getRequest(request.id);
-      if (!current || current.status !== 'en-route') {
-        stopSimulation(request.id);
-        return;
-      }
-      notify(request.id, current, moving);
+      notify(request.id, request, moving);
       return;
     }
 
@@ -512,23 +587,27 @@ function runHandover(request: CollectionRequest, collector: Collector) {
     const collecting = await setStatus(request.id, 'collecting');
     if (!collecting) return;
     notify(request.id, collecting, collector);
-
-    schedule(sim, COLLECTING_TO_DONE_MS, async () => {
-      const done = await setStatus(request.id, 'completed', {
-        completedAt: new Date().toISOString(),
-      });
-      if (!done) return;
-      await saveCollector({ ...collector, status: 'available' });
-      notify(request.id, done, collector);
-    });
+    finishCollecting(collecting, collector);
   });
 }
 
-/** Resumes the state machine from wherever the persisted request left off. */
+function finishCollecting(request: CollectionRequest, collector: Collector) {
+  const sim = getSim(request.id);
+  schedule(sim, COLLECTING_TO_DONE_MS, async () => {
+    const done = await setStatus(request.id, 'completed');
+    if (!done) return;
+    await saveCollector({ ...collector, status: 'available' });
+    notify(request.id, done, collector);
+  });
+}
+
+/** Resumes the simulation from wherever the server-side request left off.
+ *  Scheduled pickups wait for their slot; only ASAP pickups run right away. */
 async function ensureSimulation(request: CollectionRequest) {
   const sim = getSim(request.id);
   const alreadyRunning = sim.timers.length > 0 || sim.interval;
   if (alreadyRunning || !ACTIVE_STATUSES.includes(request.status)) return;
+  if (request.status === 'pending' && new Date(request.scheduledFor).getTime() > Date.now() + 60_000) return;
 
   const collector = request.collectorId ? await getCollector(request.collectorId) : null;
   switch (request.status) {
@@ -550,28 +629,32 @@ async function ensureSimulation(request: CollectionRequest) {
       if (collector) runHandover(request, collector);
       break;
     case 'collecting':
-      if (collector) {
-        schedule(sim, COLLECTING_TO_DONE_MS, async () => {
-          const done = await setStatus(request.id, 'completed', {
-            completedAt: new Date().toISOString(),
-          });
-          if (!done) return;
-          await saveCollector({ ...collector, status: 'available' });
-          notify(request.id, done, collector);
-        });
-      }
+      if (collector) finishCollecting(request, collector);
       break;
   }
 }
 
 /**
- * Subscribes to live updates for a request (the future Socket.IO channel).
- * Immediately emits the current state, then streams simulation updates.
+ * Subscribes to live updates for a request. Emits the current state, then
+ * every server-side change (Supabase Realtime) plus simulated movement.
  * Returns an unsubscribe function.
  */
 export function subscribeToRequest(requestId: string, listener: Listener): () => void {
   const sim = getSim(requestId);
   sim.listeners.add(listener);
+
+  const channel = supabase
+    .channel(`pickup:${requestId}:${Math.random().toString(36).slice(2, 8)}`)
+    .on(
+      'postgres_changes',
+      { event: 'UPDATE', schema: 'public', table: 'pickup_requests', filter: `id=eq.${requestId}` },
+      async (payload) => {
+        const request = toRequest(payload.new as RequestRow, await getSimAssignments());
+        const collector = request.collectorId ? await getCollector(request.collectorId) : null;
+        listener({ request, collector });
+      },
+    )
+    .subscribe();
 
   (async () => {
     const request = await getRequest(requestId);
@@ -583,6 +666,7 @@ export function subscribeToRequest(requestId: string, listener: Listener): () =>
 
   return () => {
     sim.listeners.delete(listener);
+    supabase.removeChannel(channel);
   };
 }
 

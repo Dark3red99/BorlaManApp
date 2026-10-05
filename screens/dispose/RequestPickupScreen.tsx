@@ -102,6 +102,7 @@ export default function RequestPickupScreen({ navigation }: RootStackScreenProps
         location: draft.location,
         addressText: draft.addressText.trim(),
         scheduledFor: draft.asap ? new Date().toISOString() : draft.scheduledFor!,
+        asap: draft.asap,
         priceGhs: quote.priceGhs,
       });
       navigation.replace('TrackPickup', { requestId: request.id });

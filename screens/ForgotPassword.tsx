@@ -15,7 +15,8 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import type { RootStackScreenProps } from '../types/navigation';
-import { resetPassword, AuthError } from '../services/authService';
+import { sendResetCode, verifyResetCode, setNewPassword, AuthError } from '../services/authService';
+import { validateEmail } from '../utils/validation';
 import { validatePassword } from '../utils/validation';
 import AuthHero from '../components/AuthHero';
 import WaveDivider from '../components/WaveDivider';
@@ -35,7 +36,7 @@ const FONT_BOLD = 'PlusJakartaSans_700Bold';
 const FONT_EXTRABOLD = 'PlusJakartaSans_800ExtraBold';
 const WIDE_BREAKPOINT = 768;
 
-type Step = 'phone' | 'otp' | 'reset';
+type Step = 'email' | 'otp' | 'reset';
 
 const OTP_LENGTH = 6;
 
@@ -43,8 +44,9 @@ export default function ForgotPassword({ navigation }: RootStackScreenProps<'For
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const isWide = width >= WIDE_BREAKPOINT;
-  const [step, setStep] = useState<Step>('phone');
-  const [phone, setPhone] = useState('');
+  const [step, setStep] = useState<Step>('email');
+  const [email, setEmail] = useState('');
+  const [busy, setBusy] = useState(false);
   const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(''));
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -114,10 +116,28 @@ export default function ForgotPassword({ navigation }: RootStackScreenProps<'For
     });
   };
 
-  const handleSendOTP = () => {
-    if (phone.trim().length < 9) return;
-    // TODO: call your OTP send API here
-    animateToNext('otp');
+  const emailValid = !validateEmail(email);
+
+  const sendCode = async () => {
+    setBusy(true);
+    try {
+      await sendResetCode(email);
+      return true;
+    } catch (e) {
+      Alert.alert('Could not send code', e instanceof AuthError ? e.message : 'Something went wrong. Please try again.');
+      return false;
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleSendOTP = async () => {
+    if (!emailValid || busy) return;
+    if (await sendCode()) animateToNext('otp');
+  };
+
+  const handleResend = async () => {
+    if (await sendCode()) startTimer();
   };
 
   const handleOtpChange = (val: string, index: number) => {
@@ -150,11 +170,18 @@ export default function ForgotPassword({ navigation }: RootStackScreenProps<'For
     }
   };
 
-  const handleVerifyOTP = () => {
+  const handleVerifyOTP = async () => {
     const code = otp.join('');
-    if (code.length < OTP_LENGTH) return;
-    // TODO: verify OTP with your API here
-    animateToNext('reset');
+    if (code.length < OTP_LENGTH || busy) return;
+    setBusy(true);
+    try {
+      await verifyResetCode(email, code);
+      animateToNext('reset');
+    } catch (e) {
+      Alert.alert('Invalid code', e instanceof AuthError ? e.message : 'Something went wrong. Please try again.');
+    } finally {
+      setBusy(false);
+    }
   };
 
   const handleResetPassword = async () => {
@@ -165,7 +192,7 @@ export default function ForgotPassword({ navigation }: RootStackScreenProps<'For
     }
     if (newPassword !== confirmPassword) return;
     try {
-      await resetPassword(phone, newPassword);
+      await setNewPassword(newPassword);
       Alert.alert('Password Reset', 'Your password has been updated. Sign in with your new password.', [
         { text: 'Sign In', onPress: () => navigation.navigate('SignIn') },
       ]);
@@ -178,13 +205,13 @@ export default function ForgotPassword({ navigation }: RootStackScreenProps<'For
   };
 
   const handleBack = () => {
-    if (step === 'otp') animateToNext('phone');
+    if (step === 'otp') animateToNext('email');
     else if (step === 'reset') animateToNext('otp');
     else navigation?.goBack();
   };
 
   // Step indicator
-  const stepIndex = step === 'phone' ? 0 : step === 'otp' ? 1 : 2;
+  const stepIndex = step === 'email' ? 0 : step === 'otp' ? 1 : 2;
 
   return (
     <SafeAreaView style={styles.safe} edges={['left', 'right']}>
@@ -215,38 +242,38 @@ export default function ForgotPassword({ navigation }: RootStackScreenProps<'For
                 { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
               ]}
             >
-              {/* ─── STEP 1: Phone ─── */}
-              {step === 'phone' && (
+              {/* ─── STEP 1: Email ─── */}
+              {step === 'email' && (
                 <View style={styles.stepBlock}>
                   <Text style={styles.heading}>Forgot Password?</Text>
                   <Text style={styles.subText}>
-                    Enter your registered phone number and we'll send you a verification code.
+                    Enter your account email and we'll send you a {OTP_LENGTH}-digit code.
                   </Text>
 
                   <View style={styles.form}>
                     <View style={styles.inputWrapper}>
-                      <View style={styles.phonePrefix}>
-                        <Text style={styles.phonePrefixText}>🇬🇭 +233</Text>
-                      </View>
                       <TextInput
-                        style={[styles.input, styles.inputPhoneField]}
-                        placeholder="Phone number"
+                        style={styles.input}
+                        placeholder="Email address"
                         placeholderTextColor={PLACEHOLDER}
-                        value={phone}
-                        onChangeText={setPhone}
-                        keyboardType="phone-pad"
+                        value={email}
+                        onChangeText={setEmail}
+                        keyboardType="email-address"
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                        autoComplete="email"
+                        textContentType="emailAddress"
                         returnKeyType="done"
-                        maxLength={10}
                       />
                     </View>
 
                     <TouchableOpacity
-                      style={[styles.primaryBtn, phone.trim().length < 9 && styles.btnDisabled]}
+                      style={[styles.primaryBtn, (!emailValid || busy) && styles.btnDisabled]}
                       onPress={handleSendOTP}
                       activeOpacity={0.85}
-                      disabled={phone.trim().length < 9}
+                      disabled={!emailValid || busy}
                     >
-                      <Text style={styles.primaryBtnText}>Send OTP</Text>
+                      <Text style={styles.primaryBtnText}>{busy ? 'Sending…' : 'Send code'}</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -255,10 +282,10 @@ export default function ForgotPassword({ navigation }: RootStackScreenProps<'For
               {/* ─── STEP 2: OTP ─── */}
               {step === 'otp' && (
                 <View style={styles.stepBlock}>
-                  <Text style={styles.heading}>Enter OTP</Text>
+                  <Text style={styles.heading}>Enter code</Text>
                   <Text style={styles.subText}>
                     We sent a {OTP_LENGTH}-digit code to{' '}
-                    <Text style={styles.phoneHighlight}>+233 {phone}</Text>
+                    <Text style={styles.phoneHighlight}>{email.trim()}</Text>
                   </Text>
 
                   <View style={styles.otpRow}>
@@ -281,8 +308,8 @@ export default function ForgotPassword({ navigation }: RootStackScreenProps<'For
                   {/* Resend */}
                   <View style={styles.resendRow}>
                     {canResend ? (
-                      <TouchableOpacity onPress={startTimer}>
-                        <Text style={styles.resendActive}>Resend OTP</Text>
+                      <TouchableOpacity onPress={handleResend} disabled={busy}>
+                        <Text style={styles.resendActive}>Resend code</Text>
                       </TouchableOpacity>
                     ) : (
                       <Text style={styles.resendTimer}>

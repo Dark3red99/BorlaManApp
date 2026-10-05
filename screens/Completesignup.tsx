@@ -113,7 +113,11 @@ export default function CompleteSignUp({ navigation, route }: RootStackScreenPro
         routes: [{ name: 'RegistrationSuccess', params: { name: user.fullName } }],
       });
     } catch (e) {
-      if (e instanceof AuthError && e.code === 'email-taken') {
+      if (e instanceof AuthError && e.code === 'email-not-confirmed') {
+        Alert.alert('Confirm your email', e.message, [
+          { text: 'Go to Sign In', onPress: () => navigation.reset({ index: 0, routes: [{ name: 'SignIn' }] }) },
+        ]);
+      } else if (e instanceof AuthError && e.code === 'email-taken') {
         setErrors((prev) => ({ ...prev, email: e.message }));
       } else if (e instanceof AuthError) {
         Alert.alert('Sign Up Failed', e.message, [

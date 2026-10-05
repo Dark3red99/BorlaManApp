@@ -8,7 +8,7 @@ type AuthContextValue = {
   /** True while the persisted session is being restored on app launch. */
   initializing: boolean;
   register: (input: RegisterInput) => Promise<User>;
-  signIn: (identifier: string, password: string) => Promise<User>;
+  signIn: (email: string, password: string) => Promise<User>;
   signOut: () => Promise<void>;
 };
 
@@ -23,6 +23,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .getCurrentUser()
       .then(setUser)
       .finally(() => setInitializing(false));
+    // Session expired or revoked elsewhere: drop back to signed-out.
+    return authService.onSignedOut(() => setUser(null));
   }, []);
 
   const value = useMemo<AuthContextValue>(
@@ -34,8 +36,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(created);
         return created;
       },
-      signIn: async (identifier, password) => {
-        const signedIn = await authService.signIn(identifier, password);
+      signIn: async (email, password) => {
+        const signedIn = await authService.signIn(email, password);
         setUser(signedIn);
         return signedIn;
       },
