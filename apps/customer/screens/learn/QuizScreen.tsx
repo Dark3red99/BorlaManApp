@@ -21,7 +21,7 @@ import type { Palette } from '@borlaman/shared/constants/theme';
 
 
 export default function QuizScreen({ navigation, route }: RootStackScreenProps<'Quiz'>) {
-  const { ui, isDark } = useTheme();
+  const { ui, isDark, soft } = useTheme();
   const styles = useThemedStyles(makeStyles);
   const { wasteType } = route.params;
   const { user } = useAuth();
@@ -184,7 +184,7 @@ export default function QuizScreen({ navigation, route }: RootStackScreenProps<'
         })}
 
         {answered && (
-          <View style={[styles.explainBox, { backgroundColor: meta.colorSoft }]}>
+          <View style={[styles.explainBox, { backgroundColor: soft(meta.color, meta.colorSoft) }]}>
             <MaterialCommunityIcons name="lightbulb-on-outline" size={18} color={meta.color} />
             <Text style={styles.explainText}>{question.explanation}</Text>
           </View>

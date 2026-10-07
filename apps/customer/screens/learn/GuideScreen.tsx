@@ -18,7 +18,7 @@ import type { Palette } from '@borlaman/shared/constants/theme';
 
 
 export default function GuideScreen({ navigation, route }: RootStackScreenProps<'Guide'>) {
-  const { ui, isDark } = useTheme();
+  const { ui, isDark, soft } = useTheme();
   const styles = useThemedStyles(makeStyles);
   const { wasteType } = route.params;
   const guide = guideFor(wasteType);
@@ -76,7 +76,7 @@ export default function GuideScreen({ navigation, route }: RootStackScreenProps<
         </View>
 
         {/* ── Tip ── */}
-        <View style={[styles.tipCard, { backgroundColor: meta.colorSoft }]}>
+        <View style={[styles.tipCard, { backgroundColor: soft(meta.color, meta.colorSoft) }]}>
           <MaterialCommunityIcons name="lightbulb-on-outline" size={20} color={meta.color} />
           <Text style={[styles.tipText, { color: ui.text }]}>{guide.tip}</Text>
         </View>
