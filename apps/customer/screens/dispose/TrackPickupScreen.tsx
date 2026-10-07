@@ -256,24 +256,26 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     elevation: 5,
   },
+  // The card's white runs under the iPhone home-bar area too, so no map
+  // shows through below it.
   bottomWrap: {
     position: 'absolute',
     left: 0,
     right: 0,
     bottom: 0,
-  },
-  card: {
     backgroundColor: WHITE,
     borderTopLeftRadius: 26,
     borderTopRightRadius: 26,
-    paddingHorizontal: 22,
-    paddingTop: 22,
-    paddingBottom: 14,
     shadowColor: '#000',
     shadowOpacity: 0.12,
     shadowRadius: 14,
     shadowOffset: { width: 0, height: -4 },
     elevation: 12,
+  },
+  card: {
+    paddingHorizontal: 22,
+    paddingTop: 22,
+    paddingBottom: 14,
   },
 
   // ── Searching state ──

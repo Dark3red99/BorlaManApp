@@ -11,7 +11,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import MapView, { type Details, type Region } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -51,6 +51,7 @@ const SEARCH_DELTA = 0.0025;
 export default function SetCollectionPointScreen() {
   const navigation = useNavigation();
   const { user } = useAuth();
+  const insets = useSafeAreaInsets();
   const mapRef = useRef<MapView>(null);
 
   // The map centers once, on load: on the saved point, else on a fresh GPS
@@ -379,7 +380,8 @@ export default function SetCollectionPointScreen() {
       </View>
 
       {/* Confirm card */}
-      <View style={styles.footer}>
+      {/* Extra bottom padding keeps the button clear of the iPhone home bar. */}
+      <View style={[styles.footer, { paddingBottom: Math.max(20, insets.bottom + 10) }]}>
         <View style={styles.labelRow}>
           <Text style={styles.inputLabel}>Pickup spot label</Text>
           {resolvingLabel && <ActivityIndicator size="small" color={PRIMARY} />}
