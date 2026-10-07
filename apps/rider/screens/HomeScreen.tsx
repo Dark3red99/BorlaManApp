@@ -413,15 +413,22 @@ const makeStyles = (ui: Palette) =>
     },
     binCountText: { fontFamily: Fonts.semiBold, fontSize: 12.5, color: ui.text },
 
-    bottom: { position: 'absolute', left: 0, right: 0, bottom: 0 },
-    panel: {
+    // The sheet's colour runs under the iPhone home-bar area too, so no map
+    // shows through below the panel.
+    bottom: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      bottom: 0,
       backgroundColor: ui.surface,
       borderTopLeftRadius: Radius.xl,
       borderTopRightRadius: Radius.xl,
+      ...Elevation.float,
+    },
+    panel: {
       padding: 16,
       paddingBottom: 12,
       gap: 14,
-      ...Elevation.float,
     },
     jobsRow: { gap: 10 },
     jobCard: {
