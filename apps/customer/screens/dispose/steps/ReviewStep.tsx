@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, ScrollView, StyleSheet, Image, ActivityIndicator, Pressable } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Image, ActivityIndicator, Pressable, KeyboardAvoidingView, Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { ChevronRight, Clock, MapPin, Repeat } from 'lucide-react-native';
 
@@ -38,7 +38,9 @@ export default function ReviewStep({ draft, quote }: Props) {
   const savingPct = plan != null && quote ? Math.round((1 - plan / quote.breakdown.sizeGhs) * 100) : 0;
 
   return (
-    <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+    <ScrollView
+        keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
+        keyboardShouldPersistTaps="handled" contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
       {/* ── Summary ── */}
       <Card style={styles.card}>
         {meta && band && (

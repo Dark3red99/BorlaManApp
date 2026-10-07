@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, StatusBar, ActivityIndicator, Alert, BackHandler } from 'react-native';
+import { View, Text, StyleSheet, StatusBar, ActivityIndicator, Alert, BackHandler, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowRight, ChevronLeft } from 'lucide-react-native';
 
@@ -125,6 +125,7 @@ export default function RequestPickupScreen({ navigation }: RootStackScreenProps
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right', 'bottom']}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <StatusBar barStyle={ui.dark ? 'light-content' : 'dark-content'} backgroundColor={ui.bg} />
 
       {/* ── Header ── */}
@@ -169,6 +170,7 @@ export default function RequestPickupScreen({ navigation }: RootStackScreenProps
           />
         )}
       </View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

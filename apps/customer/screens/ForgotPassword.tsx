@@ -3,6 +3,7 @@ import {
   View,
   Text,
   TextInput,
+  ScrollView,
   TouchableOpacity,
   StyleSheet,
   KeyboardAvoidingView,
@@ -218,13 +219,19 @@ export default function ForgotPassword({ navigation }: RootStackScreenProps<'For
       <StatusBar barStyle="dark-content" backgroundColor={PRIMARY_SOFT} />
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <View style={[styles.shell, isWide && styles.shellWide]}>
           {/* Illustration header — top band on phones, left panel on wide screens */}
           <AuthHero wide={isWide} asset={sanitationArt} artWidth={230} artHeight={144} />
 
-          <View style={styles.formPane}>
+          <ScrollView
+            style={styles.formPane}
+            contentContainerStyle={styles.formPaneContent}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
+            showsVerticalScrollIndicator={false}
+          >
             {/* Step dots */}
             <View style={styles.stepDots}>
               {[0, 1, 2].map((i) => (
@@ -431,7 +438,7 @@ export default function ForgotPassword({ navigation }: RootStackScreenProps<'For
                 <Text style={styles.signInLink}>Sign In</Text>
               </TouchableOpacity>
             </View>
-          </View>
+          </ScrollView>
 
           {/* Back Button — floats over the illustration band */}
           <TouchableOpacity
@@ -462,6 +469,11 @@ const styles = StyleSheet.create({
   },
   formPane: {
     flex: 1,
+  },
+  // Lets the form scroll above the keyboard on small phones.
+  formPaneContent: {
+    flexGrow: 1,
+    paddingBottom: 24,
   },
 
   // Back button

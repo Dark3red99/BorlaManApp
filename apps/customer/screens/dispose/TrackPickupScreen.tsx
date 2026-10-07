@@ -10,32 +10,14 @@ import {
   Easing,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import {
-  Camera,
-  Map as MapLibreMap,
-  Marker as MapLibreMarker,
-  GeoJSONSource,
-  Layer as MapLibreLayer,
-  type CameraRef,
-  type LngLatBounds,
-} from '../../components/map/MapLibre';
+import MapView, { Marker, Polyline } from 'react-native-maps';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
 import * as pickupService from '../../services/pickupService';
-import type { Collector, CollectionRequest, GeoPoint } from '@borlaman/shared/types/models';
+import type { Collector, CollectionRequest } from '@borlaman/shared/types/models';
 import type { RootStackScreenProps } from '../../types/navigation';
-import { formatDistance, haversineKm, toLngLat } from '@borlaman/shared/utils/geo';
-import { MAP_STYLE_URL } from '../../constants/map';
-
-// [west, south, east, north] box that contains both points.
-function boundsFor(a: GeoPoint, b: GeoPoint): LngLatBounds {
-  return [
-    Math.min(a.longitude, b.longitude),
-    Math.min(a.latitude, b.latitude),
-    Math.max(a.longitude, b.longitude),
-    Math.max(a.latitude, b.latitude),
-  ];
-}
+import { formatDistance, haversineKm } from '@borlaman/shared/utils/geo';
+import { regionAround } from '../../constants/map';
 
 const PRIMARY = '#059669';
 const PRIMARY_DARK = '#047857';
@@ -54,7 +36,7 @@ const STATUS_COPY: Record<string, { title: string; sub: string }> = {
 
 export default function TrackPickupScreen({ navigation, route }: RootStackScreenProps<'TrackPickup'>) {
   const { requestId } = route.params;
-  const cameraRef = useRef<CameraRef>(null);
+  const mapRef = useRef<MapView>(null);
   const fitted = useRef(false);
   const [request, setRequest] = useState<CollectionRequest | null>(null);
   const [collector, setCollector] = useState<Collector | null>(null);
@@ -89,8 +71,9 @@ export default function TrackPickupScreen({ navigation, route }: RootStackScreen
   useEffect(() => {
     if (!request || !collector || fitted.current) return;
     fitted.current = true;
-    cameraRef.current?.fitBounds(boundsFor(request.location, collector.currentLocation), {
-      padding: { top: 90, right: 70, bottom: 320, left: 70 },
+    mapRef.current?.fitToCoordinates([request.location, collector.currentLocation], {
+      edgePadding: { top: 110, right: 70, bottom: 340, left: 70 },
+      animated: true,
     });
   }, [request, collector]);
 
@@ -127,46 +110,34 @@ export default function TrackPickupScreen({ navigation, route }: RootStackScreen
       <StatusBar barStyle="dark-content" />
 
       {request && (
-        <MapLibreMap style={StyleSheet.absoluteFill} mapStyle={MAP_STYLE_URL}>
-          <Camera
-            ref={cameraRef}
-            initialViewState={{ center: toLngLat(request.location), zoom: 15 }}
-          />
-
-          <MapLibreMarker lngLat={toLngLat(request.location)} anchor="bottom">
+        <MapView
+          ref={mapRef}
+          style={StyleSheet.absoluteFill}
+          initialRegion={regionAround(request.location, 0.012)}
+          toolbarEnabled={false}
+        >
+          {/* Your pickup point */}
+          <Marker coordinate={request.location} anchor={{ x: 0.5, y: 1 }} tracksViewChanges={false}>
             <MaterialCommunityIcons name="map-marker" size={40} color={PRIMARY} />
-          </MapLibreMarker>
+          </Marker>
 
           {showCollector && (
             <>
-              <MapLibreMarker lngLat={toLngLat(collector.currentLocation)} anchor="center">
+              {/* The rider's tricycle, moving live */}
+              <Marker coordinate={collector.currentLocation} anchor={{ x: 0.5, y: 0.5 }}>
                 <View style={styles.collectorMarker}>
                   <MaterialCommunityIcons name="rickshaw" size={20} color={WHITE} />
                 </View>
-              </MapLibreMarker>
-              <GeoJSONSource
-                id="routeLine"
-                data={{
-                  type: 'Feature',
-                  properties: {},
-                  geometry: {
-                    type: 'LineString',
-                    coordinates: [
-                      toLngLat(collector.currentLocation),
-                      toLngLat(request.location),
-                    ],
-                  },
-                }}
-              >
-                <MapLibreLayer
-                  id="routeLineLayer"
-                  type="line"
-                  paint={{ 'line-color': PRIMARY, 'line-width': 3, 'line-dasharray': [2, 1.5] }}
-                />
-              </GeoJSONSource>
+              </Marker>
+              <Polyline
+                coordinates={[collector.currentLocation, request.location]}
+                strokeColor={PRIMARY}
+                strokeWidth={3}
+                lineDashPattern={[8, 6]}
+              />
             </>
           )}
-        </MapLibreMap>
+        </MapView>
       )}
 
       {/* ── Back button ── */}

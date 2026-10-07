@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -31,6 +31,8 @@ const WIDE_BREAKPOINT = 768;
 type Errors = Partial<Record<'fullName' | 'phone' | 'password' | 'confirmPassword', string>>;
 
 export default function Registration({ navigation }: RootStackScreenProps<'Registration'>) {
+  // Lets each field's "Next" key jump to the following field.
+  const fieldRefs = useRef<(TextInput | null)[]>([]);
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const isWide = width >= WIDE_BREAKPOINT;
@@ -70,11 +72,12 @@ export default function Registration({ navigation }: RootStackScreenProps<'Regis
         <StatusBar barStyle="dark-content" backgroundColor={D.bgTop} />
         <KeyboardAvoidingView
           style={{ flex: 1 }}
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
           <ScrollView
             contentContainerStyle={styles.scroll}
             keyboardShouldPersistTaps="handled"
+            keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
             showsVerticalScrollIndicator={false}
           >
             <View style={[styles.center, isWide && styles.centerWide]}>
@@ -91,6 +94,7 @@ export default function Registration({ navigation }: RootStackScreenProps<'Regis
                 <View>
                   <View style={styles.inputWrapper}>
                     <TextInput
+                    ref={(r) => { fieldRefs.current[0] = r; }}
                       style={[styles.input, styles.inputWithLeadingIcon, errors.fullName ? styles.inputError : null]}
                       placeholder="Full name"
                       placeholderTextColor={D.textFaint}
@@ -100,6 +104,8 @@ export default function Registration({ navigation }: RootStackScreenProps<'Regis
                       textContentType="name"
                       autoComplete="name"
                       returnKeyType="next"
+                    submitBehavior="submit"
+                    onSubmitEditing={() => fieldRefs.current[1]?.focus()}
                     />
                     <View style={styles.leadingIcon} pointerEvents="none">
                       <Ionicons name="person-outline" size={20} color={D.neon} />
@@ -112,6 +118,7 @@ export default function Registration({ navigation }: RootStackScreenProps<'Regis
                 <View>
                   <View style={styles.inputWrapper}>
                     <TextInput
+                    ref={(r) => { fieldRefs.current[1] = r; }}
                       style={[styles.input, styles.inputWithLeadingIcon, errors.phone ? styles.inputError : null]}
                       placeholder="Phone Number"
                       placeholderTextColor={D.textFaint}
@@ -121,6 +128,8 @@ export default function Registration({ navigation }: RootStackScreenProps<'Regis
                       textContentType="telephoneNumber"
                       autoComplete="tel"
                       returnKeyType="next"
+                    submitBehavior="submit"
+                    onSubmitEditing={() => fieldRefs.current[2]?.focus()}
                     />
                     <View style={styles.leadingIcon} pointerEvents="none">
                       <Ionicons name="call-outline" size={20} color={D.neon} />
@@ -133,6 +142,7 @@ export default function Registration({ navigation }: RootStackScreenProps<'Regis
                 <View>
                   <View style={styles.inputWrapper}>
                     <TextInput
+                    ref={(r) => { fieldRefs.current[2] = r; }}
                       style={[styles.input, styles.inputWithLeadingIcon, styles.inputWithIcon, errors.password ? styles.inputError : null]}
                       placeholder="Password"
                       placeholderTextColor={D.textFaint}
@@ -142,6 +152,8 @@ export default function Registration({ navigation }: RootStackScreenProps<'Regis
                       textContentType="newPassword"
                       autoComplete="new-password"
                       returnKeyType="next"
+                    submitBehavior="submit"
+                    onSubmitEditing={() => fieldRefs.current[3]?.focus()}
                     />
                     <View style={styles.leadingIcon} pointerEvents="none">
                       <Ionicons name="lock-closed-outline" size={20} color={D.neon} />
@@ -167,6 +179,7 @@ export default function Registration({ navigation }: RootStackScreenProps<'Regis
                 <View>
                   <View style={styles.inputWrapper}>
                     <TextInput
+                    ref={(r) => { fieldRefs.current[3] = r; }}
                       style={[styles.input, styles.inputWithLeadingIcon, styles.inputWithIcon, errors.confirmPassword ? styles.inputError : null]}
                       placeholder="Confirm Password"
                       placeholderTextColor={D.textFaint}

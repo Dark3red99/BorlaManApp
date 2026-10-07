@@ -8,23 +8,18 @@ import {
   ActivityIndicator,
   Alert,
   Keyboard,
-  type NativeSyntheticEvent,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import {
-  Camera,
-  Map as MapLibreMap,
-  type CameraRef,
-  type ViewStateChangeEvent,
-} from '../../components/map/MapLibre';
+import MapView, { type Details, type Region } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 
 import { useAuth } from '../../context/AuthContext';
 import type { CollectionPoint, GeoPoint } from '@borlaman/shared/types/models';
-import { toLngLat, fromLngLat } from '@borlaman/shared/utils/geo';
-import { ACCRA_FALLBACK, MAP_STYLE_URL, isMapTilerConfigured } from '../../constants/map';
+import { ACCRA_FALLBACK, isMapTilerConfigured, regionAround } from '../../constants/map';
 import {
   geocoder,
   digitalAddressResolver,
@@ -49,13 +44,14 @@ const FONT_MEDIUM = 'PlusJakartaSans_500Medium';
 const FONT_SEMIBOLD = 'PlusJakartaSans_600SemiBold';
 const FONT_EXTRABOLD = 'PlusJakartaSans_800ExtraBold';
 
-const PIN_ZOOM = 16;
-const SEARCH_ZOOM = 17;
+// How much map the screen shows: smaller = closer in.
+const PIN_DELTA = 0.005;
+const SEARCH_DELTA = 0.0025;
 
 export default function SetCollectionPointScreen() {
   const navigation = useNavigation();
   const { user } = useAuth();
-  const cameraRef = useRef<CameraRef>(null);
+  const mapRef = useRef<MapView>(null);
 
   // The map centers once, on load: on the saved point, else on a fresh GPS
   // fix, else on the Accra fallback. Null until that decision is made.
@@ -148,20 +144,19 @@ export default function SetCollectionPointScreen() {
       });
   };
 
-  const onRegionDidChange = (e: NativeSyntheticEvent<ViewStateChangeEvent>) => {
-    const { center, userInteraction } = e.nativeEvent;
-    const point = fromLngLat(center as [number, number]);
+  const onRegionChangeComplete = (region: Region, details?: Details) => {
+    const point = { latitude: region.latitude, longitude: region.longitude };
     setPin(point);
     // Only a hand-panned settle re-labels the point; programmatic moves
     // (search / GPS fly-in) already set their own label.
-    if (!userInteraction) return;
+    if (!details?.isGesture) return;
     setSource('pin'); // fine-tuning keeps gpsText — the code still names this spot
     if (reverseTimer.current) clearTimeout(reverseTimer.current);
     reverseTimer.current = setTimeout(() => fillLabelFrom(point), 300);
   };
 
-  const flyTo = (point: GeoPoint, zoom: number) => {
-    cameraRef.current?.flyTo({ center: toLngLat(point), zoom, duration: 800 });
+  const flyTo = (point: GeoPoint, delta: number) => {
+    mapRef.current?.animateToRegion(regionAround(point, delta), 800);
   };
 
   const onQueryChange = (text: string) => {
@@ -206,7 +201,7 @@ export default function SetCollectionPointScreen() {
         setQuery(code);
         labelEdited.current = false;
         setLabel(resolved.label || code);
-        flyTo(resolved.point, SEARCH_ZOOM);
+        flyTo(resolved.point, SEARCH_DELTA);
       } else {
         setQuery(code);
         if (!labelEdited.current && !label) setLabel(code);
@@ -221,7 +216,7 @@ export default function SetCollectionPointScreen() {
     setSource('search');
     labelEdited.current = false;
     setLabel(result.label || result.detail);
-    flyTo(result.point, SEARCH_ZOOM);
+    flyTo(result.point, SEARCH_DELTA);
   };
 
   const useMyLocation = async () => {
@@ -242,7 +237,7 @@ export default function SetCollectionPointScreen() {
       setGpsText(undefined);
       labelEdited.current = false;
       fillLabelFrom(point);
-      flyTo(point, PIN_ZOOM);
+      flyTo(point, PIN_DELTA);
     } catch {
       setDenied(true);
     } finally {
@@ -274,6 +269,7 @@ export default function SetCollectionPointScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7}>
@@ -323,7 +319,7 @@ export default function SetCollectionPointScreen() {
       {!isMapTilerConfigured() && (
         <View style={styles.banner}>
           <Text style={styles.bannerText}>
-            Map tiles and search need a MapTiler key — set EXPO_PUBLIC_MAPTILER_KEY in .env.local.
+            Address search needs a MapTiler key (EXPO_PUBLIC_MAPTILER_KEY in .env.local). You can still drag the map to your spot.
           </Text>
         </View>
       )}
@@ -343,17 +339,17 @@ export default function SetCollectionPointScreen() {
       {/* Map with fixed center pin */}
       <View style={styles.mapWrap}>
         {initialCenter ? (
-          <MapLibreMap
+          <MapView
+            ref={mapRef}
             style={StyleSheet.absoluteFill}
-            mapStyle={MAP_STYLE_URL}
-            onRegionDidChange={onRegionDidChange}
+            initialRegion={regionAround(initialCenter, PIN_DELTA)}
+            onRegionChangeComplete={onRegionChangeComplete}
             onPress={() => Keyboard.dismiss()}
-          >
-            <Camera
-              ref={cameraRef}
-              initialViewState={{ center: toLngLat(initialCenter), zoom: PIN_ZOOM }}
-            />
-          </MapLibreMap>
+            onPanDrag={() => Keyboard.dismiss()}
+            showsUserLocation
+            showsMyLocationButton={false}
+            toolbarEnabled={false}
+          />
         ) : (
           <View style={styles.mapLoading}>
             <ActivityIndicator size="large" color={PRIMARY} />
@@ -419,6 +415,7 @@ export default function SetCollectionPointScreen() {
           )}
         </TouchableOpacity>
       </View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -41,6 +41,8 @@ const WIDE_BREAKPOINT = 768;
 type Errors = Partial<Record<'email' | 'region' | 'district' | 'address' | 'area', string>>;
 
 export default function CompleteSignUp({ navigation, route }: RootStackScreenProps<'CompleteSignUp'>) {
+  // Lets each field's "Next" key jump to the following field.
+  const fieldRefs = useRef<(TextInput | null)[]>([]);
   const { draft, category } = route.params;
   const { register } = useAuth();
   const { width } = useWindowDimensions();
@@ -137,7 +139,7 @@ export default function CompleteSignUp({ navigation, route }: RootStackScreenPro
       <StatusBar barStyle="dark-content" backgroundColor={PRIMARY_SOFT} />
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <View style={[styles.shell, isWide && styles.shellWide]}>
           {/* Illustration header — top band on phones, left panel on wide screens */}
@@ -147,6 +149,7 @@ export default function CompleteSignUp({ navigation, route }: RootStackScreenPro
             style={styles.formPane}
             contentContainerStyle={styles.scroll}
             keyboardShouldPersistTaps="handled"
+            keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
             showsVerticalScrollIndicator={false}
           >
             <View style={[styles.formColumn, isWide && styles.formColumnWide]}>
@@ -159,6 +162,7 @@ export default function CompleteSignUp({ navigation, route }: RootStackScreenPro
                 <View>
                   <View style={styles.inputWrapper}>
                     <TextInput
+                    ref={(r) => { fieldRefs.current[0] = r; }}
                       style={[styles.input, styles.inputWithLeadingIcon, errors.email ? styles.inputError : null]}
                       placeholder="Email address"
                       placeholderTextColor={PLACEHOLDER}
@@ -169,6 +173,8 @@ export default function CompleteSignUp({ navigation, route }: RootStackScreenPro
                       textContentType="emailAddress"
                       autoComplete="email"
                       returnKeyType="next"
+                    submitBehavior="submit"
+                    onSubmitEditing={() => fieldRefs.current[1]?.focus()}
                     />
                     <View style={styles.leadingIcon} pointerEvents="none">
                       <Ionicons name="mail-outline" size={20} color={PRIMARY} />
@@ -203,6 +209,7 @@ export default function CompleteSignUp({ navigation, route }: RootStackScreenPro
                 <View>
                   <View style={styles.inputWrapper}>
                     <TextInput
+                    ref={(r) => { fieldRefs.current[1] = r; }}
                       style={[styles.input, styles.inputWithLeadingIcon, errors.address ? styles.inputError : null]}
                       placeholder="Address /House No."
                       placeholderTextColor={PLACEHOLDER}
@@ -211,6 +218,8 @@ export default function CompleteSignUp({ navigation, route }: RootStackScreenPro
                       textContentType="fullStreetAddress"
                       autoComplete="street-address"
                       returnKeyType="next"
+                    submitBehavior="submit"
+                    onSubmitEditing={() => fieldRefs.current[2]?.focus()}
                     />
                     <View style={styles.leadingIcon} pointerEvents="none">
                       <Ionicons name="home-outline" size={20} color={PRIMARY} />
@@ -223,12 +232,15 @@ export default function CompleteSignUp({ navigation, route }: RootStackScreenPro
                 <View>
                   <View style={styles.inputWrapper}>
                     <TextInput
+                    ref={(r) => { fieldRefs.current[2] = r; }}
                       style={[styles.input, styles.inputWithLeadingIcon, errors.area ? styles.inputError : null]}
                       placeholder="Area/Neighborhood"
                       placeholderTextColor={PLACEHOLDER}
                       value={area}
                       onChangeText={(v) => { setArea(v); clearError('area'); }}
                       returnKeyType="next"
+                    submitBehavior="submit"
+                    onSubmitEditing={() => fieldRefs.current[3]?.focus()}
                     />
                     <View style={styles.leadingIcon} pointerEvents="none">
                       <Ionicons name="navigate-outline" size={20} color={PRIMARY} />
@@ -240,6 +252,7 @@ export default function CompleteSignUp({ navigation, route }: RootStackScreenPro
                 {/* GPS Location */}
                 <View style={styles.inputWrapper}>
                   <TextInput
+                    ref={(r) => { fieldRefs.current[3] = r; }}
                     style={[styles.input, styles.inputWithLeadingIcon, styles.inputWithIcon]}
                     placeholder="GPS location"
                     placeholderTextColor={PLACEHOLDER}

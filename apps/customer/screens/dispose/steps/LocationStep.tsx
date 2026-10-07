@@ -7,33 +7,23 @@ import {
   StyleSheet,
   ActivityIndicator,
   Keyboard,
-  type NativeSyntheticEvent,
 } from 'react-native';
-import {
-  Camera,
-  Map as MapLibreMap,
-  UserLocation,
-  type CameraRef,
-  type ViewStateChangeEvent,
-} from '../../../components/map/MapLibre';
+import MapView, { type Region } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
 import type { GeoPoint } from '@borlaman/shared/types/models';
 import type { PickupDraft } from '../RequestPickupScreen';
-import { toLngLat, fromLngLat } from '@borlaman/shared/utils/geo';
-import { MAP_STYLE_URL, isMapTilerConfigured } from '../../../constants/map';
+import { regionAround } from '../../../constants/map';
 
 const PRIMARY = '#059669';
 const WHITE   = '#FFFFFF';
 const TEXT    = '#0F172A';
 const MUTED   = '#64748B';
 const BORDER  = '#DCE8E1';
-const AMBER_TEXT = '#92400E';
 
 // Kwame Nkrumah Circle, Accra — the fallback when GPS is unavailable/denied.
 const DEFAULT_CENTER: GeoPoint = { latitude: 5.5717, longitude: -0.2107 };
-const DEFAULT_ZOOM = 16;
 
 type Props = {
   draft: PickupDraft;
@@ -41,7 +31,7 @@ type Props = {
 };
 
 export default function LocationStep({ draft, onChange }: Props) {
-  const cameraRef = useRef<CameraRef>(null);
+  const mapRef = useRef<MapView>(null);
   const addressEdited = useRef(draft.addressText.trim().length > 0);
   const [locating, setLocating] = useState(false);
   const [denied, setDenied] = useState(false);
@@ -69,8 +59,9 @@ export default function LocationStep({ draft, onChange }: Props) {
     }
   };
 
-  const onRegionDidChange = (e: NativeSyntheticEvent<ViewStateChangeEvent>) => {
-    const point = fromLngLat(e.nativeEvent.center as [number, number]);
+  // The map stopped moving: its center is the new pickup point.
+  const onRegionChangeComplete = (region: Region) => {
+    const point = { latitude: region.latitude, longitude: region.longitude };
     onChange({ location: point });
     fillAddressFrom(point);
   };
@@ -90,7 +81,7 @@ export default function LocationStep({ draft, onChange }: Props) {
       const point = { latitude: pos.coords.latitude, longitude: pos.coords.longitude };
       onChange({ location: point });
       fillAddressFrom(point);
-      cameraRef.current?.flyTo({ center: toLngLat(point), zoom: DEFAULT_ZOOM, duration: 600 });
+      mapRef.current?.animateToRegion(regionAround(point), 600);
     } catch {
       setDenied(true);
     } finally {
@@ -101,18 +92,17 @@ export default function LocationStep({ draft, onChange }: Props) {
   return (
     <View style={styles.container}>
       <View style={styles.mapWrap}>
-        <MapLibreMap
+        <MapView
+          ref={mapRef}
           style={StyleSheet.absoluteFill}
-          mapStyle={MAP_STYLE_URL}
-          onRegionDidChange={onRegionDidChange}
+          initialRegion={regionAround(center)}
+          onRegionChangeComplete={onRegionChangeComplete}
           onPress={() => Keyboard.dismiss()}
-        >
-          <Camera
-            ref={cameraRef}
-            initialViewState={{ center: toLngLat(center), zoom: DEFAULT_ZOOM }}
-          />
-          <UserLocation />
-        </MapLibreMap>
+          onPanDrag={() => Keyboard.dismiss()}
+          showsUserLocation
+          showsMyLocationButton={false}
+          toolbarEnabled={false}
+        />
 
         {/* Fixed center pin — drag the map underneath it */}
         <View pointerEvents="none" style={styles.pinWrap}>
@@ -132,11 +122,6 @@ export default function LocationStep({ draft, onChange }: Props) {
         </View>
       </View>
 
-      {!isMapTilerConfigured() && (
-        <Text style={styles.mapKeyHint}>
-          Map tiles need a MapTiler key (.env.local) — you can still drop the pin blind.
-        </Text>
-      )}
       {denied && (
         <Text style={styles.deniedText}>
           Location permission denied — drag the map to your spot instead.
@@ -212,12 +197,6 @@ const styles = StyleSheet.create({
     fontFamily: 'PlusJakartaSans_500Medium',
     fontSize: 11,
     color: WHITE,
-  },
-  mapKeyHint: {
-    fontFamily: 'PlusJakartaSans_400Regular',
-    fontSize: 11,
-    color: AMBER_TEXT,
-    marginTop: 8,
   },
   deniedText: {
     fontFamily: 'PlusJakartaSans_400Regular',

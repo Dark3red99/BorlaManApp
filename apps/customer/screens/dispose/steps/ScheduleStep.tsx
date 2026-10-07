@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, Pressable, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { CalendarDays, Zap, type LucideIcon } from 'lucide-react-native';
 
 import type { PickupDraft } from '../RequestPickupScreen';
@@ -62,7 +62,9 @@ export default function ScheduleStep({ draft, onChange }: Props) {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+    <ScrollView
+        keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
+        keyboardShouldPersistTaps="handled" contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
       <View>
         <Text style={styles.sectionTitle}>When should we come?</Text>
         <Text style={styles.sectionHint}>Scheduling ahead is cheaper. Collectors plan their rounds around it.</Text>

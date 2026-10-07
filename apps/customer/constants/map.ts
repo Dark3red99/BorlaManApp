@@ -1,8 +1,9 @@
 import type { GeoPoint } from '@borlaman/shared/types/models';
 
-// Hosted map/geocoding provider config. One MapTiler key covers both the
-// tile style and the geocoder; it is inlined into the bundle at build time
-// (EXPO_PUBLIC_*), so restrict it by app ID in the MapTiler dashboard.
+// Maps are react-native-maps (Apple Maps on iPhone, Google Maps on Android),
+// which runs in Expo Go. MapTiler is only used for address search; its key
+// is inlined into the bundle at build time (EXPO_PUBLIC_*), so restrict it
+// by app ID in the MapTiler dashboard.
 
 export const MAPTILER_KEY = process.env.EXPO_PUBLIC_MAPTILER_KEY ?? '';
 
@@ -11,7 +12,12 @@ export function isMapTilerConfigured(): boolean {
   return MAPTILER_KEY !== '' && MAPTILER_KEY !== 'YOUR_MAPTILER_KEY_HERE';
 }
 
-export const MAP_STYLE_URL = `https://api.maptiler.com/maps/streets-v4/style.json?key=${MAPTILER_KEY}`;
 
 // Kwame Nkrumah Circle, Accra — the fallback center when GPS is denied/unavailable.
 export const ACCRA_FALLBACK: GeoPoint = { latitude: 5.5717, longitude: -0.2107 };
+
+/** A map view centered on `point`; `delta` is how many degrees of map are visible
+ *  (0.005 ≈ a few streets, like zoom 16). */
+export function regionAround(point: GeoPoint, delta = 0.005) {
+  return { latitude: point.latitude, longitude: point.longitude, latitudeDelta: delta, longitudeDelta: delta };
+}

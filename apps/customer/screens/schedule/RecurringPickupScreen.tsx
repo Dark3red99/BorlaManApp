@@ -8,6 +8,8 @@ import {
   StatusBar,
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChevronLeft, MapPin, Repeat } from 'lucide-react-native';
@@ -105,6 +107,7 @@ export default function RecurringPickupScreen({ navigation, route }: RootStackSc
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right', 'bottom']}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <StatusBar barStyle={ui.dark ? 'light-content' : 'dark-content'} backgroundColor={ui.bg} />
 
       {/* ── Header ── */}
@@ -119,6 +122,7 @@ export default function RecurringPickupScreen({ navigation, route }: RootStackSc
       </View>
 
       <ScrollView
+        keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
@@ -248,6 +252,7 @@ export default function RecurringPickupScreen({ navigation, route }: RootStackSc
           />
         )}
       </View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

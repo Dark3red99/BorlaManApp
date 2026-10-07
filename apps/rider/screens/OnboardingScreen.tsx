@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { Camera, Check, IdCard, Bike, UserRound, type LucideIcon } from 'lucide-react-native';
@@ -100,7 +100,9 @@ export default function OnboardingScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
-      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <ScrollView
+        keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'} contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <View>
           <Text style={styles.title}>Set up your rider account</Text>
           <Text style={styles.subtitle}>
@@ -173,6 +175,7 @@ export default function OnboardingScreen() {
         <Button label={saving ? 'Submitting…' : 'Submit for review'} onPress={submit} disabled={saving} />
         <Button label="Sign out" variant="secondary" onPress={signOut} />
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

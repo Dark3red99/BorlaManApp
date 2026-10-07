@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -26,6 +26,8 @@ import { ScreenColors as D, Fonts } from '@borlaman/shared/constants/theme';
 const WIDE_BREAKPOINT = 768;
 
 export default function SignIn({ navigation }: RootStackScreenProps<'SignIn'>) {
+  // Lets each field's "Next" key jump to the following field.
+  const fieldRefs = useRef<(TextInput | null)[]>([]);
   const { signIn } = useAuth();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
@@ -71,11 +73,12 @@ export default function SignIn({ navigation }: RootStackScreenProps<'SignIn'>) {
         <StatusBar barStyle="dark-content" backgroundColor={D.bgTop} />
         <KeyboardAvoidingView
           style={{ flex: 1 }}
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
           <ScrollView
             contentContainerStyle={styles.scroll}
             keyboardShouldPersistTaps="handled"
+            keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
             showsVerticalScrollIndicator={false}
           >
             <View style={[styles.center, isWide && styles.centerWide]}>
@@ -91,6 +94,7 @@ export default function SignIn({ navigation }: RootStackScreenProps<'SignIn'>) {
                 {/* Email */}
                 <View style={styles.inputWrapper}>
                   <TextInput
+                    ref={(r) => { fieldRefs.current[0] = r; }}
                     style={[styles.input, styles.inputWithLeadingIcon]}
                     placeholder="Email address"
                     placeholderTextColor={D.textFaint}
@@ -102,6 +106,8 @@ export default function SignIn({ navigation }: RootStackScreenProps<'SignIn'>) {
                     textContentType="emailAddress"
                     autoComplete="email"
                     returnKeyType="next"
+                    submitBehavior="submit"
+                    onSubmitEditing={() => fieldRefs.current[1]?.focus()}
                   />
                   <View style={styles.leadingIcon} pointerEvents="none">
                     <Ionicons name="mail-outline" size={20} color={D.neon} />
@@ -111,6 +117,7 @@ export default function SignIn({ navigation }: RootStackScreenProps<'SignIn'>) {
                 {/* Password */}
                 <View style={styles.inputWrapper}>
                   <TextInput
+                    ref={(r) => { fieldRefs.current[1] = r; }}
                     style={[styles.input, styles.inputWithLeadingIcon, styles.inputWithIcon]}
                     placeholder="Password"
                     placeholderTextColor={D.textFaint}

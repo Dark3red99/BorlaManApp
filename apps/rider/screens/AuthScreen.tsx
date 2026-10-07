@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useRef, useState } from 'react';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Bike } from 'lucide-react-native';
 
@@ -23,6 +23,10 @@ export default function AuthScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
+  // "Next" on the keyboard moves through the fields in order.
+  const phoneRef = useRef<TextInput>(null);
+  const emailRef = useRef<TextInput>(null);
+  const passwordRef = useRef<TextInput>(null);
   const [error, setError] = useState<string | null>(null);
 
   const problem = (() => {
@@ -55,7 +59,8 @@ export default function AuthScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+        <ScrollView
+        keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'} contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
           <View style={styles.brand}>
             <IconTile icon={Bike} tone="solid" size={56} />
             <Text style={styles.title}>BorlaMan Rider</Text>
@@ -77,8 +82,18 @@ export default function AuthScreen() {
           <View style={styles.form}>
             {mode === 'signup' && (
               <>
-                <Field label="Full name" value={fullName} onChangeText={setFullName} placeholder="e.g. Kwame Boateng" autoCapitalize="words" />
                 <Field
+                  label="Full name"
+                  value={fullName}
+                  onChangeText={setFullName}
+                  placeholder="e.g. Kwame Boateng"
+                  autoCapitalize="words"
+                  returnKeyType="next"
+                  submitBehavior="submit"
+                  onSubmitEditing={() => phoneRef.current?.focus()}
+                />
+                <Field
+                  ref={phoneRef}
                   label="Phone number"
                   value={phone}
                   onChangeText={setPhone}
@@ -89,6 +104,10 @@ export default function AuthScreen() {
               </>
             )}
             <Field
+              ref={emailRef}
+              returnKeyType="next"
+              submitBehavior="submit"
+              onSubmitEditing={() => passwordRef.current?.focus()}
               label="Email"
               value={email}
               onChangeText={setEmail}
@@ -99,6 +118,9 @@ export default function AuthScreen() {
               autoComplete="email"
             />
             <Field
+              ref={passwordRef}
+              returnKeyType="go"
+              onSubmitEditing={submit}
               label="Password"
               value={password}
               onChangeText={setPassword}

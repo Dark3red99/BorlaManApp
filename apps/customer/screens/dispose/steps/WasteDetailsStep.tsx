@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet, Image, Alert } from 'react-native';
+import { View, Text, ScrollView, Pressable, StyleSheet, Image, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { Camera, ImagePlus, X } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 
@@ -55,7 +55,9 @@ export default function WasteDetailsStep({ draft, onChange }: Props) {
   const selectedSize = SIZES.find((s) => s.kg === draft.volumeKg);
 
   return (
-    <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+    <ScrollView
+        keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
+        keyboardShouldPersistTaps="handled" contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
       {/* ── Waste type ── */}
       <View>
         <Text style={styles.sectionTitle}>What are we collecting?</Text>

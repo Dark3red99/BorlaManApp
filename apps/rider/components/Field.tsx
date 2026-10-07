@@ -1,22 +1,25 @@
-import React from 'react';
+import React, { forwardRef } from 'react';
 import { StyleSheet, Text, TextInput, View, type TextInputProps } from 'react-native';
 import { Fonts, Radius, type Palette } from '@borlaman/shared/constants/theme';
 import { useTheme, useThemedStyles } from '@borlaman/shared/theme/ThemeContext';
 
 type Props = TextInputProps & { label: string; hint?: string };
 
-/** Labelled text input in the rider app's dark style. */
-export default function Field({ label, hint, style, ...input }: Props) {
+/** Labelled text input in the rider app's dark style. The ref reaches the
+ *  inner TextInput, so a form can move focus to the next field. */
+const Field = forwardRef<TextInput, Props>(function Field({ label, hint, style, ...input }, ref) {
   const { ui } = useTheme();
   const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.wrap}>
       <Text style={styles.label}>{label}</Text>
-      <TextInput placeholderTextColor={ui.textFaint} style={[styles.input, style]} {...input} />
+      <TextInput ref={ref} placeholderTextColor={ui.textFaint} style={[styles.input, style]} {...input} />
       {hint ? <Text style={styles.hint}>{hint}</Text> : null}
     </View>
   );
-}
+});
+
+export default Field;
 
 const makeStyles = (ui: Palette) =>
   StyleSheet.create({

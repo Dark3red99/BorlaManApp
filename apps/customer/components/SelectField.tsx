@@ -7,6 +7,8 @@ import {
   StyleSheet,
   Modal,
   FlatList,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -88,7 +90,7 @@ export default function SelectField({
       ) : null}
 
       <Modal visible={open} animationType="slide" transparent onRequestClose={() => setOpen(false)}>
-        <View style={styles.backdrop}>
+        <KeyboardAvoidingView style={styles.backdrop} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <TouchableOpacity style={styles.backdropTap} activeOpacity={1} onPress={() => setOpen(false)} />
           <SafeAreaView style={styles.sheet} edges={['bottom']}>
             <View style={styles.sheetHandle} />
@@ -127,7 +129,7 @@ export default function SelectField({
               )}
             />
           </SafeAreaView>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );
