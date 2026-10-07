@@ -2,12 +2,9 @@ import React from 'react';
 import { View, Text, StyleSheet, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme, useThemedStyles } from '@borlaman/shared/theme/ThemeContext';
+import type { Palette } from '@borlaman/shared/constants/theme';
 
-const PRIMARY = '#059669';
-const BG      = '#F3F8F5';
-const WHITE   = '#FFFFFF';
-const TEXT    = '#0F172A';
-const MUTED   = '#64748B';
 
 const LABELS: Record<string, string> = {
   Dispose: 'Dispose',
@@ -16,14 +13,16 @@ const LABELS: Record<string, string> = {
 };
 
 export default function ComingSoonScreen({ route }: any) {
+  const { ui, isDark } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const label = LABELS[route?.name] ?? route?.name ?? '';
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
-      <StatusBar barStyle="dark-content" backgroundColor={BG} />
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={ui.bg} />
       <View style={styles.container}>
         <View style={styles.iconBox}>
-          <Ionicons name="construct-outline" size={26} color={PRIMARY} />
+          <Ionicons name="construct-outline" size={26} color={ui.accent} />
         </View>
         <Text style={styles.title}>{label}</Text>
         <Text style={styles.text}>This section is coming soon.</Text>
@@ -32,10 +31,11 @@ export default function ComingSoonScreen({ route }: any) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (ui: Palette) =>
+  StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: BG,
+    backgroundColor: ui.bg,
   },
   container: {
     flex: 1,
@@ -47,7 +47,7 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: '#ECFDF5',
+    backgroundColor: ui.accentSoft,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 18,
@@ -55,13 +55,13 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: 'PlusJakartaSans_700Bold',
     fontSize: 18,
-    color: TEXT,
+    color: ui.text,
     marginBottom: 6,
   },
   text: {
     fontFamily: 'PlusJakartaSans_400Regular',
     fontSize: 13,
-    color: MUTED,
+    color: ui.textMuted,
     textAlign: 'center',
   },
 });

@@ -13,13 +13,13 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import type { RootStackScreenProps } from '../../types/navigation';
 import { wasteMeta } from '@borlaman/shared/constants/waste';
 import { guideFor, quizFor, quizMaxPoints } from '../../constants/learn';
+import { useTheme, useThemedStyles } from '@borlaman/shared/theme/ThemeContext';
+import type { Palette } from '@borlaman/shared/constants/theme';
 
-const BG    = '#F3F8F5';
-const WHITE = '#FFFFFF';
-const TEXT  = '#0F172A';
-const MUTED = '#64748B';
 
 export default function GuideScreen({ navigation, route }: RootStackScreenProps<'Guide'>) {
+  const { ui, isDark } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const { wasteType } = route.params;
   const guide = guideFor(wasteType);
   const meta = wasteMeta(wasteType);
@@ -27,12 +27,12 @@ export default function GuideScreen({ navigation, route }: RootStackScreenProps<
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right', 'bottom']}>
-      <StatusBar barStyle="dark-content" backgroundColor={BG} />
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={ui.bg} />
 
       {/* ── Header ── */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7}>
-          <Ionicons name="arrow-back" size={22} color={TEXT} />
+          <Ionicons name="arrow-back" size={22} color={ui.text} />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
           <Text style={styles.headerKicker}>{meta.label} · {guide.readMinutes} min read</Text>
@@ -44,7 +44,7 @@ export default function GuideScreen({ navigation, route }: RootStackScreenProps<
         {/* ── Hero ── */}
         <View style={[styles.heroCard, { backgroundColor: meta.color }]}>
           <View style={styles.heroIconBox}>
-            <MaterialCommunityIcons name={meta.icon as any} size={30} color={WHITE} />
+            <MaterialCommunityIcons name={meta.icon as any} size={30} color={ui.onAccent} />
           </View>
           <Text style={styles.heroText}>{guide.intro}</Text>
         </View>
@@ -54,7 +54,7 @@ export default function GuideScreen({ navigation, route }: RootStackScreenProps<
           <Text style={styles.cardTitle}>Do</Text>
           {guide.dos.map((item) => (
             <View key={item} style={styles.pointRow}>
-              <View style={[styles.pointIcon, { backgroundColor: '#DCFCE7' }]}>
+              <View style={[styles.pointIcon, { backgroundColor: ui.accentSoft }]}>
                 <Ionicons name="checkmark" size={14} color="#16A34A" />
               </View>
               <Text style={styles.pointText}>{item}</Text>
@@ -67,8 +67,8 @@ export default function GuideScreen({ navigation, route }: RootStackScreenProps<
           <Text style={styles.cardTitle}>Don't</Text>
           {guide.donts.map((item) => (
             <View key={item} style={styles.pointRow}>
-              <View style={[styles.pointIcon, { backgroundColor: '#FEE2E2' }]}>
-                <Ionicons name="close" size={14} color="#DC2626" />
+              <View style={[styles.pointIcon, { backgroundColor: ui.dangerSoft }]}>
+                <Ionicons name="close" size={14} color={ui.danger} />
               </View>
               <Text style={styles.pointText}>{item}</Text>
             </View>
@@ -78,7 +78,7 @@ export default function GuideScreen({ navigation, route }: RootStackScreenProps<
         {/* ── Tip ── */}
         <View style={[styles.tipCard, { backgroundColor: meta.colorSoft }]}>
           <MaterialCommunityIcons name="lightbulb-on-outline" size={20} color={meta.color} />
-          <Text style={[styles.tipText, { color: TEXT }]}>{guide.tip}</Text>
+          <Text style={[styles.tipText, { color: ui.text }]}>{guide.tip}</Text>
         </View>
 
         <View style={{ height: 4 }} />
@@ -91,7 +91,7 @@ export default function GuideScreen({ navigation, route }: RootStackScreenProps<
           activeOpacity={0.85}
           onPress={() => navigation.navigate('Quiz', { wasteType })}
         >
-          <Ionicons name="help-circle-outline" size={20} color={WHITE} />
+          <Ionicons name="help-circle-outline" size={20} color={ui.onAccent} />
           <Text style={styles.quizBtnText}>
             Take the quiz · earn up to {quizMaxPoints(quiz)} pts
           </Text>
@@ -101,10 +101,11 @@ export default function GuideScreen({ navigation, route }: RootStackScreenProps<
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (ui: Palette) =>
+  StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: BG,
+    backgroundColor: ui.bg,
   },
   header: {
     flexDirection: 'row',
@@ -118,7 +119,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: WHITE,
+    backgroundColor: ui.surface,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
@@ -130,12 +131,12 @@ const styles = StyleSheet.create({
   headerKicker: {
     fontFamily: 'PlusJakartaSans_400Regular',
     fontSize: 11,
-    color: MUTED,
+    color: ui.textMuted,
   },
   headerTitle: {
     fontFamily: 'PlusJakartaSans_700Bold',
     fontSize: 17,
-    color: TEXT,
+    color: ui.text,
     lineHeight: 23,
   },
   scroll: {
@@ -164,13 +165,13 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: 'PlusJakartaSans_500Medium',
     fontSize: 12.5,
-    color: WHITE,
+    color: ui.onAccent,
     lineHeight: 19,
   },
 
   // Do / Don't cards
   card: {
-    backgroundColor: WHITE,
+    backgroundColor: ui.surface,
     borderRadius: 20,
     padding: 18,
     marginBottom: 14,
@@ -183,7 +184,7 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontFamily: 'PlusJakartaSans_700Bold',
     fontSize: 15,
-    color: TEXT,
+    color: ui.text,
     marginBottom: 10,
   },
   pointRow: {
@@ -204,7 +205,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: 'PlusJakartaSans_400Regular',
     fontSize: 13,
-    color: TEXT,
+    color: ui.text,
     lineHeight: 20,
   },
 
@@ -228,7 +229,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 10,
     paddingBottom: 6,
-    backgroundColor: BG,
+    backgroundColor: ui.bg,
   },
   quizBtn: {
     flexDirection: 'row',
@@ -237,7 +238,7 @@ const styles = StyleSheet.create({
     gap: 8,
     borderRadius: 16,
     paddingVertical: 16,
-    shadowColor: '#0F172A',
+    shadowColor: ui.text,
     shadowOpacity: 0.2,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 5 },
@@ -246,6 +247,6 @@ const styles = StyleSheet.create({
   quizBtnText: {
     fontFamily: 'PlusJakartaSans_600SemiBold',
     fontSize: 14,
-    color: WHITE,
+    color: ui.onAccent,
   },
 });

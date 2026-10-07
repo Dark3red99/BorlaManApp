@@ -18,13 +18,9 @@ import type { Collector, CollectionRequest } from '@borlaman/shared/types/models
 import type { RootStackScreenProps } from '../../types/navigation';
 import { formatDistance, haversineKm } from '@borlaman/shared/utils/geo';
 import { regionAround } from '../../constants/map';
+import { useTheme, useThemedStyles } from '@borlaman/shared/theme/ThemeContext';
+import type { Palette } from '@borlaman/shared/constants/theme';
 
-const PRIMARY = '#059669';
-const PRIMARY_DARK = '#047857';
-const WHITE   = '#FFFFFF';
-const TEXT    = '#0F172A';
-const MUTED   = '#64748B';
-const AMBER   = '#F59E0B';
 
 const STATUS_COPY: Record<string, { title: string; sub: string }> = {
   pending: { title: 'Finding a collector…', sub: 'Contacting Aboboyaa riders near you' },
@@ -35,6 +31,8 @@ const STATUS_COPY: Record<string, { title: string; sub: string }> = {
 };
 
 export default function TrackPickupScreen({ navigation, route }: RootStackScreenProps<'TrackPickup'>) {
+  const { ui, isDark } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const { requestId } = route.params;
   const mapRef = useRef<MapView>(null);
   const fitted = useRef(false);
@@ -107,10 +105,11 @@ export default function TrackPickupScreen({ navigation, route }: RootStackScreen
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" />
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
 
       {request && (
         <MapView
+          userInterfaceStyle={isDark ? 'dark' : 'light'}
           ref={mapRef}
           style={StyleSheet.absoluteFill}
           initialRegion={regionAround(request.location, 0.012)}
@@ -118,7 +117,7 @@ export default function TrackPickupScreen({ navigation, route }: RootStackScreen
         >
           {/* Your pickup point */}
           <Marker coordinate={request.location} anchor={{ x: 0.5, y: 1 }} tracksViewChanges={false}>
-            <MaterialCommunityIcons name="map-marker" size={40} color={PRIMARY} />
+            <MaterialCommunityIcons name="map-marker" size={40} color={ui.accent} />
           </Marker>
 
           {showCollector && (
@@ -126,12 +125,12 @@ export default function TrackPickupScreen({ navigation, route }: RootStackScreen
               {/* The rider's tricycle, moving live */}
               <Marker coordinate={collector.currentLocation} anchor={{ x: 0.5, y: 0.5 }}>
                 <View style={styles.collectorMarker}>
-                  <MaterialCommunityIcons name="rickshaw" size={20} color={WHITE} />
+                  <MaterialCommunityIcons name="rickshaw" size={20} color={ui.onAccent} />
                 </View>
               </Marker>
               <Polyline
                 coordinates={[collector.currentLocation, request.location]}
-                strokeColor={PRIMARY}
+                strokeColor={ui.accent}
                 strokeWidth={3}
                 lineDashPattern={[8, 6]}
               />
@@ -143,7 +142,7 @@ export default function TrackPickupScreen({ navigation, route }: RootStackScreen
       {/* ── Back button ── */}
       <SafeAreaView edges={['top']} style={styles.topBar} pointerEvents="box-none">
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.8}>
-          <Ionicons name="arrow-back" size={22} color={TEXT} />
+          <Ionicons name="arrow-back" size={22} color={ui.text} />
         </TouchableOpacity>
       </SafeAreaView>
 
@@ -157,7 +156,7 @@ export default function TrackPickupScreen({ navigation, route }: RootStackScreen
                   style={[styles.pulseRing, { opacity: pulseOpacity, transform: [{ scale: pulseScale }] }]}
                 />
                 <View style={styles.pulseCore}>
-                  <MaterialCommunityIcons name="rickshaw" size={22} color={WHITE} />
+                  <MaterialCommunityIcons name="rickshaw" size={22} color={ui.onAccent} />
                 </View>
               </View>
               <View style={{ flex: 1 }}>
@@ -190,7 +189,7 @@ export default function TrackPickupScreen({ navigation, route }: RootStackScreen
                     <Text style={styles.collectorVehicle}>{collector.vehicle}</Text>
                   </View>
                   <View style={styles.ratingBox}>
-                    <Ionicons name="star" size={13} color={AMBER} />
+                    <Ionicons name="star" size={13} color={ui.amber} />
                     <Text style={styles.ratingText}>{collector.rating.toFixed(1)}</Text>
                   </View>
                 </View>
@@ -215,10 +214,11 @@ export default function TrackPickupScreen({ navigation, route }: RootStackScreen
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (ui: Palette) =>
+  StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#E8EFEA',
+    backgroundColor: ui.bg,
   },
   topBar: {
     position: 'absolute',
@@ -232,7 +232,7 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 21,
-    backgroundColor: WHITE,
+    backgroundColor: ui.surface,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
@@ -245,11 +245,11 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: PRIMARY_DARK,
+    backgroundColor: ui.accent,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2.5,
-    borderColor: WHITE,
+    borderColor: '#FFFFFF',
     shadowColor: '#000',
     shadowOpacity: 0.25,
     shadowRadius: 5,
@@ -263,7 +263,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: WHITE,
+    backgroundColor: ui.surface,
     borderTopLeftRadius: 26,
     borderTopRightRadius: 26,
     shadowColor: '#000',
@@ -296,13 +296,13 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: PRIMARY,
+    backgroundColor: ui.accent,
   },
   pulseCore: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: PRIMARY,
+    backgroundColor: ui.accent,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -316,17 +316,17 @@ const styles = StyleSheet.create({
   statusTitle: {
     fontFamily: 'PlusJakartaSans_700Bold',
     fontSize: 17,
-    color: TEXT,
+    color: ui.text,
     lineHeight: 24,
   },
   statusSub: {
     fontFamily: 'PlusJakartaSans_400Regular',
     fontSize: 12.5,
-    color: MUTED,
+    color: ui.textMuted,
     marginTop: 1,
   },
   etaBox: {
-    backgroundColor: '#ECFDF5',
+    backgroundColor: ui.accentSoft,
     borderRadius: 14,
     paddingHorizontal: 14,
     paddingVertical: 8,
@@ -335,13 +335,13 @@ const styles = StyleSheet.create({
   etaValue: {
     fontFamily: 'PlusJakartaSans_800ExtraBold',
     fontSize: 18,
-    color: PRIMARY,
+    color: ui.accent,
     lineHeight: 22,
   },
   etaUnit: {
     fontFamily: 'PlusJakartaSans_500Medium',
     fontSize: 10,
-    color: PRIMARY_DARK,
+    color: ui.accentDeep,
   },
 
   // ── Collector card ──
@@ -349,7 +349,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: '#F6FAF8',
+    backgroundColor: ui.well,
     borderRadius: 16,
     padding: 12,
     marginTop: 14,
@@ -358,31 +358,31 @@ const styles = StyleSheet.create({
     width: 46,
     height: 46,
     borderRadius: 23,
-    backgroundColor: PRIMARY,
+    backgroundColor: ui.accent,
     alignItems: 'center',
     justifyContent: 'center',
   },
   avatarText: {
     fontFamily: 'PlusJakartaSans_700Bold',
     fontSize: 18,
-    color: WHITE,
+    color: ui.onAccent,
   },
   collectorName: {
     fontFamily: 'PlusJakartaSans_600SemiBold',
     fontSize: 14,
-    color: TEXT,
+    color: ui.text,
   },
   collectorVehicle: {
     fontFamily: 'PlusJakartaSans_400Regular',
     fontSize: 11.5,
-    color: MUTED,
+    color: ui.textMuted,
     marginTop: 1,
   },
   ratingBox: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: WHITE,
+    backgroundColor: ui.surface,
     borderRadius: 10,
     paddingHorizontal: 8,
     paddingVertical: 5,
@@ -390,12 +390,12 @@ const styles = StyleSheet.create({
   ratingText: {
     fontFamily: 'PlusJakartaSans_600SemiBold',
     fontSize: 12,
-    color: TEXT,
+    color: ui.text,
   },
   distanceText: {
     fontFamily: 'PlusJakartaSans_500Medium',
     fontSize: 12,
-    color: MUTED,
+    color: ui.textMuted,
     marginTop: 10,
     textAlign: 'center',
   },
@@ -405,14 +405,14 @@ const styles = StyleSheet.create({
     marginTop: 14,
     borderRadius: 14,
     borderWidth: 1.5,
-    borderColor: '#FECACA',
-    backgroundColor: '#FEF2F2',
+    borderColor: ui.dangerSoft,
+    backgroundColor: ui.dangerSoft,
     paddingVertical: 12,
     alignItems: 'center',
   },
   cancelBtnText: {
     fontFamily: 'PlusJakartaSans_600SemiBold',
     fontSize: 13,
-    color: '#DC2626',
+    color: ui.danger,
   },
 });

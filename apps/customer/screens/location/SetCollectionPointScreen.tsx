@@ -28,16 +28,9 @@ import {
   type GeocodeResult,
 } from '../../services/geocodingService';
 import { getCollectionPoint, saveCollectionPoint } from '../../services/locationService';
+import { useTheme, useThemedStyles } from '@borlaman/shared/theme/ThemeContext';
+import type { Palette } from '@borlaman/shared/constants/theme';
 
-const PRIMARY = '#059669';
-const PRIMARY_SOFT = '#ECFDF5';
-const BG = '#F3F8F5';
-const WHITE = '#FFFFFF';
-const TEXT = '#0F172A';
-const MUTED = '#64748B';
-const BORDER = '#DCE8E1';
-const AMBER_BG = '#FEF3C7';
-const AMBER_TEXT = '#92400E';
 
 const FONT_REGULAR = 'PlusJakartaSans_400Regular';
 const FONT_MEDIUM = 'PlusJakartaSans_500Medium';
@@ -49,6 +42,8 @@ const PIN_DELTA = 0.005;
 const SEARCH_DELTA = 0.0025;
 
 export default function SetCollectionPointScreen() {
+  const { ui, isDark } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const navigation = useNavigation();
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
@@ -274,7 +269,7 @@ export default function SetCollectionPointScreen() {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7}>
-          <Ionicons name="arrow-back" size={22} color={TEXT} />
+          <Ionicons name="arrow-back" size={22} color={ui.text} />
         </TouchableOpacity>
         <Text style={styles.title}>{existing ? 'Edit collection point' : 'Set collection point'}</Text>
       </View>
@@ -282,17 +277,17 @@ export default function SetCollectionPointScreen() {
       {/* Search */}
       <View style={styles.searchWrap}>
         <View style={styles.searchBox}>
-          <Ionicons name="search" size={18} color={MUTED} />
+          <Ionicons name="search" size={18} color={ui.textMuted} />
           <TextInput
             style={styles.searchInput}
             placeholder="Search address or GhanaPostGPS (GA-183-8164)"
-            placeholderTextColor="#94A3B8"
+            placeholderTextColor={ui.textFaint}
             value={query}
             onChangeText={onQueryChange}
             autoCorrect={false}
             returnKeyType="search"
           />
-          {searching && <ActivityIndicator size="small" color={PRIMARY} />}
+          {searching && <ActivityIndicator size="small" color={ui.accent} />}
         </View>
         {results.length > 0 && (
           <View style={styles.resultsCard}>
@@ -306,7 +301,7 @@ export default function SetCollectionPointScreen() {
                 <Ionicons
                   name={r.kind === 'digital-address' ? 'keypad-outline' : 'location-outline'}
                   size={16}
-                  color={PRIMARY}
+                  color={ui.accent}
                 />
                 <Text style={styles.resultText} numberOfLines={2}>
                   {r.detail}
@@ -341,6 +336,7 @@ export default function SetCollectionPointScreen() {
       <View style={styles.mapWrap}>
         {initialCenter ? (
           <MapView
+            userInterfaceStyle={isDark ? 'dark' : 'light'}
             ref={mapRef}
             style={StyleSheet.absoluteFill}
             initialRegion={regionAround(initialCenter, PIN_DELTA)}
@@ -353,7 +349,7 @@ export default function SetCollectionPointScreen() {
           />
         ) : (
           <View style={styles.mapLoading}>
-            <ActivityIndicator size="large" color={PRIMARY} />
+            <ActivityIndicator size="large" color={ui.accent} />
             <Text style={styles.mapLoadingText}>Finding your location…</Text>
           </View>
         )}
@@ -361,14 +357,14 @@ export default function SetCollectionPointScreen() {
         {initialCenter && (
           <>
             <View pointerEvents="none" style={styles.pinWrap}>
-              <MaterialCommunityIcons name="map-marker" size={44} color={PRIMARY} style={styles.pin} />
+              <MaterialCommunityIcons name="map-marker" size={44} color={ui.accent} style={styles.pin} />
             </View>
 
             <TouchableOpacity style={styles.locateBtn} onPress={useMyLocation} activeOpacity={0.8}>
               {locating ? (
-                <ActivityIndicator size="small" color={PRIMARY} />
+                <ActivityIndicator size="small" color={ui.accent} />
               ) : (
-                <Ionicons name="locate" size={20} color={PRIMARY} />
+                <Ionicons name="locate" size={20} color={ui.accent} />
               )}
             </TouchableOpacity>
 
@@ -384,12 +380,12 @@ export default function SetCollectionPointScreen() {
       <View style={[styles.footer, { paddingBottom: Math.max(20, insets.bottom + 10) }]}>
         <View style={styles.labelRow}>
           <Text style={styles.inputLabel}>Pickup spot label</Text>
-          {resolvingLabel && <ActivityIndicator size="small" color={PRIMARY} />}
+          {resolvingLabel && <ActivityIndicator size="small" color={ui.accent} />}
         </View>
         <TextInput
           style={styles.labelInput}
           placeholder="e.g. House 12, Nii Boi Street — blue gate"
-          placeholderTextColor="#94A3B8"
+          placeholderTextColor={ui.textFaint}
           value={label}
           onChangeText={(text) => {
             labelEdited.current = text.trim().length > 0;
@@ -398,7 +394,7 @@ export default function SetCollectionPointScreen() {
         />
         {gpsText && (
           <View style={styles.gpsBadge}>
-            <Ionicons name="keypad-outline" size={13} color={PRIMARY} />
+            <Ionicons name="keypad-outline" size={13} color={ui.accent} />
             <Text style={styles.gpsBadgeText}>{gpsText}</Text>
           </View>
         )}
@@ -409,7 +405,7 @@ export default function SetCollectionPointScreen() {
           activeOpacity={0.85}
         >
           {saving ? (
-            <ActivityIndicator size="small" color={WHITE} />
+            <ActivityIndicator size="small" color={ui.onAccent} />
           ) : (
             <Text style={styles.confirmText}>
               {existing ? 'Update collection point' : 'Confirm collection point'}
@@ -422,10 +418,11 @@ export default function SetCollectionPointScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (ui: Palette) =>
+  StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: BG,
+    backgroundColor: ui.bg,
   },
   header: {
     flexDirection: 'row',
@@ -439,14 +436,14 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 14,
-    backgroundColor: WHITE,
+    backgroundColor: ui.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
   title: {
     fontFamily: FONT_EXTRABOLD,
     fontSize: 20,
-    color: TEXT,
+    color: ui.text,
   },
 
   // Search
@@ -458,10 +455,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: WHITE,
+    backgroundColor: ui.surface,
     borderRadius: 14,
     borderWidth: 1.5,
-    borderColor: BORDER,
+    borderColor: ui.hairline,
     paddingHorizontal: 12,
     height: 48,
   },
@@ -469,14 +466,14 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: FONT_REGULAR,
     fontSize: 13,
-    color: TEXT,
+    color: ui.text,
   },
   resultsCard: {
     position: 'absolute',
     top: 52,
     left: 20,
     right: 20,
-    backgroundColor: WHITE,
+    backgroundColor: ui.surface,
     borderRadius: 14,
     paddingHorizontal: 12,
     shadowColor: '#000',
@@ -493,17 +490,17 @@ const styles = StyleSheet.create({
   },
   resultRowBorder: {
     borderBottomWidth: 1,
-    borderBottomColor: '#EDF4F0',
+    borderBottomColor: ui.hairline,
   },
   resultText: {
     flex: 1,
     fontFamily: FONT_MEDIUM,
     fontSize: 13,
-    color: TEXT,
+    color: ui.text,
   },
 
   banner: {
-    backgroundColor: AMBER_BG,
+    backgroundColor: ui.amberSoft,
     borderRadius: 12,
     marginHorizontal: 20,
     marginTop: 10,
@@ -513,7 +510,7 @@ const styles = StyleSheet.create({
   bannerText: {
     fontFamily: FONT_MEDIUM,
     fontSize: 12,
-    color: AMBER_TEXT,
+    color: ui.amber,
   },
 
   // Map
@@ -523,7 +520,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     margin: 20,
     marginBottom: 12,
-    backgroundColor: '#E2E8F0',
+    backgroundColor: ui.wellStrong,
   },
   mapLoading: {
     ...StyleSheet.absoluteFill,
@@ -534,7 +531,7 @@ const styles = StyleSheet.create({
   mapLoadingText: {
     fontFamily: FONT_MEDIUM,
     fontSize: 13,
-    color: MUTED,
+    color: ui.textMuted,
   },
   pinWrap: {
     ...StyleSheet.absoluteFill,
@@ -554,7 +551,7 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 21,
-    backgroundColor: WHITE,
+    backgroundColor: ui.surface,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
@@ -575,12 +572,12 @@ const styles = StyleSheet.create({
   hintText: {
     fontFamily: FONT_MEDIUM,
     fontSize: 11,
-    color: WHITE,
+    color: ui.onAccent,
   },
 
   // Footer
   footer: {
-    backgroundColor: WHITE,
+    backgroundColor: ui.surface,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingHorizontal: 20,
@@ -596,25 +593,25 @@ const styles = StyleSheet.create({
   inputLabel: {
     fontFamily: FONT_SEMIBOLD,
     fontSize: 13,
-    color: TEXT,
+    color: ui.text,
   },
   labelInput: {
-    backgroundColor: BG,
+    backgroundColor: ui.bg,
     borderRadius: 14,
     borderWidth: 1.5,
-    borderColor: BORDER,
+    borderColor: ui.hairline,
     paddingHorizontal: 14,
     paddingVertical: 10,
     fontFamily: FONT_REGULAR,
     fontSize: 13,
-    color: TEXT,
+    color: ui.text,
   },
   gpsBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
     alignSelf: 'flex-start',
-    backgroundColor: PRIMARY_SOFT,
+    backgroundColor: ui.accentSoft,
     borderRadius: 10,
     paddingHorizontal: 10,
     paddingVertical: 4,
@@ -623,10 +620,10 @@ const styles = StyleSheet.create({
   gpsBadgeText: {
     fontFamily: FONT_SEMIBOLD,
     fontSize: 12,
-    color: PRIMARY,
+    color: ui.accent,
   },
   confirmBtn: {
-    backgroundColor: PRIMARY,
+    backgroundColor: ui.accent,
     borderRadius: 18,
     height: 54,
     alignItems: 'center',
@@ -639,6 +636,6 @@ const styles = StyleSheet.create({
   confirmText: {
     fontFamily: FONT_SEMIBOLD,
     fontSize: 15,
-    color: WHITE,
+    color: ui.onAccent,
   },
 });

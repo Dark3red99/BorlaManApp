@@ -15,12 +15,9 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import type { GeoPoint } from '@borlaman/shared/types/models';
 import type { PickupDraft } from '../RequestPickupScreen';
 import { regionAround } from '../../../constants/map';
+import { useTheme, useThemedStyles } from '@borlaman/shared/theme/ThemeContext';
+import type { Palette } from '@borlaman/shared/constants/theme';
 
-const PRIMARY = '#059669';
-const WHITE   = '#FFFFFF';
-const TEXT    = '#0F172A';
-const MUTED   = '#64748B';
-const BORDER  = '#DCE8E1';
 
 // Kwame Nkrumah Circle, Accra — the fallback when GPS is unavailable/denied.
 const DEFAULT_CENTER: GeoPoint = { latitude: 5.5717, longitude: -0.2107 };
@@ -31,6 +28,8 @@ type Props = {
 };
 
 export default function LocationStep({ draft, onChange }: Props) {
+  const { ui, isDark } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const mapRef = useRef<MapView>(null);
   const addressEdited = useRef(draft.addressText.trim().length > 0);
   const [locating, setLocating] = useState(false);
@@ -93,6 +92,7 @@ export default function LocationStep({ draft, onChange }: Props) {
     <View style={styles.container}>
       <View style={styles.mapWrap}>
         <MapView
+          userInterfaceStyle={isDark ? 'dark' : 'light'}
           ref={mapRef}
           style={StyleSheet.absoluteFill}
           initialRegion={regionAround(center)}
@@ -106,14 +106,14 @@ export default function LocationStep({ draft, onChange }: Props) {
 
         {/* Fixed center pin — drag the map underneath it */}
         <View pointerEvents="none" style={styles.pinWrap}>
-          <MaterialCommunityIcons name="map-marker" size={44} color={PRIMARY} style={styles.pin} />
+          <MaterialCommunityIcons name="map-marker" size={44} color={ui.accent} style={styles.pin} />
         </View>
 
         <TouchableOpacity style={styles.locateBtn} onPress={useMyLocation} activeOpacity={0.8}>
           {locating ? (
-            <ActivityIndicator size="small" color={PRIMARY} />
+            <ActivityIndicator size="small" color={ui.accent} />
           ) : (
-            <Ionicons name="locate" size={20} color={PRIMARY} />
+            <Ionicons name="locate" size={20} color={ui.accent} />
           )}
         </TouchableOpacity>
 
@@ -132,7 +132,7 @@ export default function LocationStep({ draft, onChange }: Props) {
       <TextInput
         style={styles.input}
         placeholder="e.g. House 12, Nii Boi Street — blue gate"
-        placeholderTextColor="#94A3B8"
+        placeholderTextColor={ui.textFaint}
         value={draft.addressText}
         onChangeText={(text) => {
           addressEdited.current = text.trim().length > 0;
@@ -144,7 +144,8 @@ export default function LocationStep({ draft, onChange }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (ui: Palette) =>
+  StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: 20,
@@ -155,7 +156,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     overflow: 'hidden',
     minHeight: 220,
-    backgroundColor: '#E2E8F0',
+    backgroundColor: ui.wellStrong,
   },
   pinWrap: {
     ...StyleSheet.absoluteFill,
@@ -175,7 +176,7 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 21,
-    backgroundColor: WHITE,
+    backgroundColor: ui.surface,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
@@ -196,31 +197,31 @@ const styles = StyleSheet.create({
   hintText: {
     fontFamily: 'PlusJakartaSans_500Medium',
     fontSize: 11,
-    color: WHITE,
+    color: ui.onAccent,
   },
   deniedText: {
     fontFamily: 'PlusJakartaSans_400Regular',
     fontSize: 11,
-    color: '#DC2626',
+    color: ui.danger,
     marginTop: 8,
   },
   inputLabel: {
     fontFamily: 'PlusJakartaSans_600SemiBold',
     fontSize: 13,
-    color: TEXT,
+    color: ui.text,
     marginTop: 12,
     marginBottom: 6,
   },
   input: {
-    backgroundColor: WHITE,
+    backgroundColor: ui.surface,
     borderRadius: 14,
     borderWidth: 1.5,
-    borderColor: BORDER,
+    borderColor: ui.hairline,
     paddingHorizontal: 14,
     paddingVertical: 10,
     fontFamily: 'PlusJakartaSans_400Regular',
     fontSize: 13,
-    color: TEXT,
+    color: ui.text,
     minHeight: 52,
     maxHeight: 84,
     textAlignVertical: 'top',

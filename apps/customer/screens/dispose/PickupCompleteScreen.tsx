@@ -19,13 +19,9 @@ import * as pickupService from '../../services/pickupService';
 import type { Collector, CollectionRequest, PaymentMethod } from '@borlaman/shared/types/models';
 import type { RootStackScreenProps } from '../../types/navigation';
 import { wasteMeta } from '@borlaman/shared/constants/waste';
+import { useTheme, useThemedStyles } from '@borlaman/shared/theme/ThemeContext';
+import type { Palette } from '@borlaman/shared/constants/theme';
 
-const PRIMARY = '#059669';
-const BG      = '#F3F8F5';
-const WHITE   = '#FFFFFF';
-const TEXT    = '#0F172A';
-const MUTED   = '#64748B';
-const AMBER   = '#F59E0B';
 
 const METHODS: { method: PaymentMethod; label: string; sub: string; icon: string }[] = [
   { method: 'momo', label: 'Mobile Money', sub: 'MTN MoMo / Telecel Cash', icon: 'cellphone' },
@@ -34,6 +30,8 @@ const METHODS: { method: PaymentMethod; label: string; sub: string; icon: string
 ];
 
 export default function PickupCompleteScreen({ navigation, route }: RootStackScreenProps<'PickupComplete'>) {
+  const { ui, isDark } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const { requestId } = route.params;
   const { user } = useAuth();
   const [request, setRequest] = useState<CollectionRequest | null>(null);
@@ -76,7 +74,7 @@ export default function PickupCompleteScreen({ navigation, route }: RootStackScr
   if (!request) {
     return (
       <SafeAreaView style={[styles.safe, { alignItems: 'center', justifyContent: 'center' }]}>
-        <ActivityIndicator color={PRIMARY} size="large" />
+        <ActivityIndicator color={ui.accent} size="large" />
       </SafeAreaView>
     );
   }
@@ -86,21 +84,21 @@ export default function PickupCompleteScreen({ navigation, route }: RootStackScr
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right', 'bottom']}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <StatusBar barStyle="dark-content" backgroundColor={BG} />
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={ui.bg} />
       <ScrollView
         keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
         keyboardShouldPersistTaps="handled" contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* ── Success header ── */}
         <View style={styles.successBox}>
           <View style={styles.checkCircle}>
-            <Ionicons name="checkmark" size={40} color={WHITE} />
+            <Ionicons name="checkmark" size={40} color={ui.onAccent} />
           </View>
           <Text style={styles.successTitle}>Pickup complete!</Text>
           <Text style={styles.successSub}>
             {meta.label} • ~{request.volumeKg} kg collected
           </Text>
           <View style={styles.pointsPill}>
-            <MaterialCommunityIcons name="leaf" size={14} color={PRIMARY} />
+            <MaterialCommunityIcons name="leaf" size={14} color={ui.accent} />
             <Text style={styles.pointsText}>+{pickupService.pointsForPickup(request.volumeKg)} impact points</Text>
           </View>
         </View>
@@ -153,8 +151,8 @@ export default function PickupCompleteScreen({ navigation, route }: RootStackScr
                 disabled={paid}
                 activeOpacity={0.8}
               >
-                <View style={[styles.methodIcon, selected && { backgroundColor: PRIMARY }]}>
-                  <MaterialCommunityIcons name={m.icon as any} size={20} color={selected ? WHITE : PRIMARY} />
+                <View style={[styles.methodIcon, selected && { backgroundColor: ui.accent }]}>
+                  <MaterialCommunityIcons name={m.icon as any} size={20} color={selected ? ui.onAccent : ui.accent} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.methodLabel}>{m.label}</Text>
@@ -163,7 +161,7 @@ export default function PickupCompleteScreen({ navigation, route }: RootStackScr
                 <Ionicons
                   name={selected ? 'radio-button-on' : 'radio-button-off'}
                   size={20}
-                  color={selected ? PRIMARY : MUTED}
+                  color={selected ? ui.accent : ui.textMuted}
                 />
               </TouchableOpacity>
             );
@@ -180,7 +178,7 @@ export default function PickupCompleteScreen({ navigation, route }: RootStackScr
                   <Ionicons
                     name={s <= stars ? 'star' : 'star-outline'}
                     size={34}
-                    color={s <= stars ? AMBER : '#CBD5E1'}
+                    color={s <= stars ? ui.amber : ui.wellStrong}
                   />
                 </TouchableOpacity>
               ))}
@@ -188,7 +186,7 @@ export default function PickupCompleteScreen({ navigation, route }: RootStackScr
             <TextInput
               style={styles.reviewInput}
               placeholder="Add a comment (optional)"
-              placeholderTextColor="#94A3B8"
+              placeholderTextColor={ui.textFaint}
               value={review}
               onChangeText={setReview}
               multiline
@@ -207,7 +205,7 @@ export default function PickupCompleteScreen({ navigation, route }: RootStackScr
           activeOpacity={0.85}
         >
           {paying ? (
-            <ActivityIndicator color={WHITE} />
+            <ActivityIndicator color={ui.onAccent} />
           ) : (
             <Text style={styles.mainBtnText}>
               {paid ? 'Done' : `Pay GH₵ ${request.priceGhs.toFixed(2)}`}
@@ -220,10 +218,11 @@ export default function PickupCompleteScreen({ navigation, route }: RootStackScr
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (ui: Palette) =>
+  StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: BG,
+    backgroundColor: ui.bg,
   },
   scroll: {
     paddingHorizontal: 20,
@@ -239,11 +238,11 @@ const styles = StyleSheet.create({
     width: 76,
     height: 76,
     borderRadius: 38,
-    backgroundColor: PRIMARY,
+    backgroundColor: ui.accent,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 12,
-    shadowColor: PRIMARY,
+    shadowColor: ui.accent,
     shadowOpacity: 0.35,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 5 },
@@ -252,19 +251,19 @@ const styles = StyleSheet.create({
   successTitle: {
     fontFamily: 'PlusJakartaSans_800ExtraBold',
     fontSize: 22,
-    color: TEXT,
+    color: ui.text,
   },
   successSub: {
     fontFamily: 'PlusJakartaSans_400Regular',
     fontSize: 13,
-    color: MUTED,
+    color: ui.textMuted,
     marginTop: 2,
   },
   pointsPill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    backgroundColor: '#D1FAE5',
+    backgroundColor: ui.accentSoft,
     borderRadius: 20,
     paddingHorizontal: 12,
     paddingVertical: 5,
@@ -273,12 +272,12 @@ const styles = StyleSheet.create({
   pointsText: {
     fontFamily: 'PlusJakartaSans_600SemiBold',
     fontSize: 12,
-    color: '#047857',
+    color: ui.accentDeep,
   },
 
   // ── Cards ──
   card: {
-    backgroundColor: WHITE,
+    backgroundColor: ui.surface,
     borderRadius: 20,
     padding: 18,
     marginBottom: 14,
@@ -291,7 +290,7 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontFamily: 'PlusJakartaSans_700Bold',
     fontSize: 15,
-    color: TEXT,
+    color: ui.text,
     marginBottom: 10,
   },
   receiptLine: {
@@ -303,12 +302,12 @@ const styles = StyleSheet.create({
   receiptLabel: {
     fontFamily: 'PlusJakartaSans_400Regular',
     fontSize: 13,
-    color: MUTED,
+    color: ui.textMuted,
   },
   receiptValue: {
     fontFamily: 'PlusJakartaSans_500Medium',
     fontSize: 13,
-    color: TEXT,
+    color: ui.text,
     flexShrink: 1,
     textAlign: 'right',
   },
@@ -316,19 +315,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     borderTopWidth: 1,
-    borderTopColor: '#F0F0F0',
+    borderTopColor: ui.hairline,
     marginTop: 8,
     paddingTop: 10,
   },
   totalLabel: {
     fontFamily: 'PlusJakartaSans_700Bold',
     fontSize: 15,
-    color: TEXT,
+    color: ui.text,
   },
   totalValue: {
     fontFamily: 'PlusJakartaSans_800ExtraBold',
     fontSize: 17,
-    color: PRIMARY,
+    color: ui.accent,
   },
 
   // ── Payment ──
@@ -341,7 +340,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: '#DCFCE7',
+    backgroundColor: ui.accentSoft,
     borderRadius: 20,
     paddingHorizontal: 10,
     paddingVertical: 3,
@@ -357,32 +356,32 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
     borderWidth: 1.5,
-    borderColor: '#DCE8E1',
+    borderColor: ui.hairline,
     borderRadius: 14,
     padding: 12,
     marginBottom: 8,
   },
   methodSelected: {
-    borderColor: PRIMARY,
-    backgroundColor: '#ECFDF5',
+    borderColor: ui.accent,
+    backgroundColor: ui.accentSoft,
   },
   methodIcon: {
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: '#D1FAE5',
+    backgroundColor: ui.accentSoft,
     alignItems: 'center',
     justifyContent: 'center',
   },
   methodLabel: {
     fontFamily: 'PlusJakartaSans_600SemiBold',
     fontSize: 13.5,
-    color: TEXT,
+    color: ui.text,
   },
   methodSub: {
     fontFamily: 'PlusJakartaSans_400Regular',
     fontSize: 11,
-    color: MUTED,
+    color: ui.textMuted,
     marginTop: 1,
   },
 
@@ -394,15 +393,15 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   reviewInput: {
-    backgroundColor: '#F6FAF8',
+    backgroundColor: ui.well,
     borderRadius: 14,
     borderWidth: 1.5,
-    borderColor: '#DCE8E1',
+    borderColor: ui.hairline,
     paddingHorizontal: 14,
     paddingVertical: 10,
     fontFamily: 'PlusJakartaSans_400Regular',
     fontSize: 13,
-    color: TEXT,
+    color: ui.text,
     minHeight: 60,
     textAlignVertical: 'top',
   },
@@ -412,14 +411,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 10,
     paddingBottom: 6,
-    backgroundColor: BG,
+    backgroundColor: ui.bg,
   },
   mainBtn: {
-    backgroundColor: PRIMARY,
+    backgroundColor: ui.accent,
     borderRadius: 16,
     paddingVertical: 16,
     alignItems: 'center',
-    shadowColor: '#047857',
+    shadowColor: ui.accentDeep,
     shadowOpacity: 0.28,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 6 },
@@ -428,6 +427,6 @@ const styles = StyleSheet.create({
   mainBtnText: {
     fontFamily: 'PlusJakartaSans_600SemiBold',
     fontSize: 15,
-    color: WHITE,
+    color: ui.onAccent,
   },
 });

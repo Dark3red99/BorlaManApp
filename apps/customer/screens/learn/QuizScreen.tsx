@@ -16,17 +16,13 @@ import * as learnService from '../../services/learnService';
 import type { RootStackScreenProps } from '../../types/navigation';
 import { wasteMeta } from '@borlaman/shared/constants/waste';
 import { quizFor, POINTS_PER_CORRECT } from '../../constants/learn';
+import { useTheme, useThemedStyles } from '@borlaman/shared/theme/ThemeContext';
+import type { Palette } from '@borlaman/shared/constants/theme';
 
-const PRIMARY = '#059669';
-const BG      = '#F3F8F5';
-const WHITE   = '#FFFFFF';
-const TEXT    = '#0F172A';
-const MUTED   = '#64748B';
-const BORDER  = '#DCE8E1';
-const GREEN   = '#16A34A';
-const RED     = '#DC2626';
 
 export default function QuizScreen({ navigation, route }: RootStackScreenProps<'Quiz'>) {
+  const { ui, isDark } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const { wasteType } = route.params;
   const { user } = useAuth();
   const quiz = quizFor(wasteType);
@@ -72,9 +68,9 @@ export default function QuizScreen({ navigation, route }: RootStackScreenProps<'
     const perfect = correctCount === total;
     return (
       <SafeAreaView style={styles.safe} edges={['top', 'left', 'right', 'bottom']}>
-        <StatusBar barStyle="dark-content" backgroundColor={BG} />
+        <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={ui.bg} />
         <View style={styles.resultWrap}>
-          <View style={[styles.scoreCircle, { backgroundColor: perfect ? PRIMARY : meta.color }]}>
+          <View style={[styles.scoreCircle, { backgroundColor: perfect ? ui.accent : meta.color }]}>
             <Text style={styles.scoreBig}>{correctCount}/{total}</Text>
             <Text style={styles.scoreSub}>correct</Text>
           </View>
@@ -85,7 +81,7 @@ export default function QuizScreen({ navigation, route }: RootStackScreenProps<'
           {submission ? (
             submission.pointsAwarded > 0 ? (
               <View style={styles.pointsPill}>
-                <MaterialCommunityIcons name="leaf" size={14} color="#047857" />
+                <MaterialCommunityIcons name="leaf" size={14} color={ui.accentDeep} />
                 <Text style={styles.pointsPillText}>+{submission.pointsAwarded} impact points</Text>
               </View>
             ) : (
@@ -94,7 +90,7 @@ export default function QuizScreen({ navigation, route }: RootStackScreenProps<'
               </Text>
             )
           ) : (
-            <ActivityIndicator color={PRIMARY} style={{ marginTop: 12 }} />
+            <ActivityIndicator color={ui.accent} style={{ marginTop: 12 }} />
           )}
 
           {!perfect && (
@@ -103,7 +99,7 @@ export default function QuizScreen({ navigation, route }: RootStackScreenProps<'
               activeOpacity={0.7}
               onPress={() => navigation.replace('Guide', { wasteType })}
             >
-              <Ionicons name="book-outline" size={15} color={PRIMARY} />
+              <Ionicons name="book-outline" size={15} color={ui.accent} />
               <Text style={styles.reviewLinkText}>Review the {meta.label.toLowerCase()} guide</Text>
             </TouchableOpacity>
           )}
@@ -126,12 +122,12 @@ export default function QuizScreen({ navigation, route }: RootStackScreenProps<'
   // ── Question view ──
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right', 'bottom']}>
-      <StatusBar barStyle="dark-content" backgroundColor={BG} />
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={ui.bg} />
 
       {/* Header + progress */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7}>
-          <Ionicons name="arrow-back" size={22} color={TEXT} />
+          <Ionicons name="arrow-back" size={22} color={ui.text} />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
           <Text style={styles.stepCount}>
@@ -175,14 +171,14 @@ export default function QuizScreen({ navigation, route }: RootStackScreenProps<'
               <Text
                 style={[
                   styles.optionText,
-                  showRight && { color: GREEN, fontFamily: 'PlusJakartaSans_600SemiBold' },
-                  showWrong && { color: RED, fontFamily: 'PlusJakartaSans_600SemiBold' },
+                  showRight && { color: ui.accent, fontFamily: 'PlusJakartaSans_600SemiBold' },
+                  showWrong && { color: ui.danger, fontFamily: 'PlusJakartaSans_600SemiBold' },
                 ]}
               >
                 {option}
               </Text>
-              {showRight && <Ionicons name="checkmark-circle" size={20} color={GREEN} />}
-              {showWrong && <Ionicons name="close-circle" size={20} color={RED} />}
+              {showRight && <Ionicons name="checkmark-circle" size={20} color={ui.accent} />}
+              {showWrong && <Ionicons name="close-circle" size={20} color={ui.danger} />}
             </TouchableOpacity>
           );
         })}
@@ -209,10 +205,11 @@ export default function QuizScreen({ navigation, route }: RootStackScreenProps<'
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (ui: Palette) =>
+  StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: BG,
+    backgroundColor: ui.bg,
   },
   header: {
     flexDirection: 'row',
@@ -226,7 +223,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: WHITE,
+    backgroundColor: ui.surface,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
@@ -238,17 +235,17 @@ const styles = StyleSheet.create({
   stepCount: {
     fontFamily: 'PlusJakartaSans_400Regular',
     fontSize: 11,
-    color: MUTED,
+    color: ui.textMuted,
   },
   stepTitle: {
     fontFamily: 'PlusJakartaSans_700Bold',
     fontSize: 18,
-    color: TEXT,
+    color: ui.text,
     lineHeight: 24,
   },
   progressTrack: {
     height: 4,
-    backgroundColor: '#E2E8F0',
+    backgroundColor: ui.wellStrong,
     marginHorizontal: 20,
     borderRadius: 4,
     overflow: 'hidden',
@@ -266,7 +263,7 @@ const styles = StyleSheet.create({
   prompt: {
     fontFamily: 'PlusJakartaSans_700Bold',
     fontSize: 17,
-    color: TEXT,
+    color: ui.text,
     lineHeight: 25,
     marginBottom: 16,
   },
@@ -275,27 +272,27 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 10,
-    backgroundColor: WHITE,
+    backgroundColor: ui.surface,
     borderRadius: 14,
     borderWidth: 1.5,
-    borderColor: BORDER,
+    borderColor: ui.hairline,
     paddingHorizontal: 16,
     paddingVertical: 14,
     marginBottom: 10,
   },
   optionRight: {
-    borderColor: GREEN,
-    backgroundColor: '#F0FDF4',
+    borderColor: ui.accent,
+    backgroundColor: ui.accentSoft,
   },
   optionWrong: {
-    borderColor: RED,
-    backgroundColor: '#FEF2F2',
+    borderColor: ui.danger,
+    backgroundColor: ui.dangerSoft,
   },
   optionText: {
     flex: 1,
     fontFamily: 'PlusJakartaSans_400Regular',
     fontSize: 13.5,
-    color: TEXT,
+    color: ui.text,
     lineHeight: 20,
   },
   explainBox: {
@@ -310,7 +307,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: 'PlusJakartaSans_500Medium',
     fontSize: 12.5,
-    color: TEXT,
+    color: ui.text,
     lineHeight: 19,
   },
 
@@ -328,7 +325,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 18,
-    shadowColor: '#0F172A',
+    shadowColor: ui.text,
     shadowOpacity: 0.25,
     shadowRadius: 14,
     shadowOffset: { width: 0, height: 6 },
@@ -337,7 +334,7 @@ const styles = StyleSheet.create({
   scoreBig: {
     fontFamily: 'PlusJakartaSans_800ExtraBold',
     fontSize: 32,
-    color: WHITE,
+    color: ui.onAccent,
     lineHeight: 40,
   },
   scoreSub: {
@@ -348,13 +345,13 @@ const styles = StyleSheet.create({
   resultTitle: {
     fontFamily: 'PlusJakartaSans_800ExtraBold',
     fontSize: 22,
-    color: TEXT,
+    color: ui.text,
   },
   pointsPill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    backgroundColor: '#D1FAE5',
+    backgroundColor: ui.accentSoft,
     borderRadius: 20,
     paddingHorizontal: 14,
     paddingVertical: 6,
@@ -363,12 +360,12 @@ const styles = StyleSheet.create({
   pointsPillText: {
     fontFamily: 'PlusJakartaSans_600SemiBold',
     fontSize: 13,
-    color: '#047857',
+    color: ui.accentDeep,
   },
   noPointsText: {
     fontFamily: 'PlusJakartaSans_400Regular',
     fontSize: 12.5,
-    color: MUTED,
+    color: ui.textMuted,
     textAlign: 'center',
     marginTop: 12,
     lineHeight: 19,
@@ -382,7 +379,7 @@ const styles = StyleSheet.create({
   reviewLinkText: {
     fontFamily: 'PlusJakartaSans_600SemiBold',
     fontSize: 13,
-    color: PRIMARY,
+    color: ui.accent,
   },
 
   // Footer
@@ -390,27 +387,27 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 10,
     paddingBottom: 6,
-    backgroundColor: BG,
+    backgroundColor: ui.bg,
   },
   mainBtn: {
-    backgroundColor: PRIMARY,
+    backgroundColor: ui.accent,
     borderRadius: 16,
     paddingVertical: 16,
     alignItems: 'center',
-    shadowColor: '#047857',
+    shadowColor: ui.accentDeep,
     shadowOpacity: 0.28,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 6 },
     elevation: 6,
   },
   mainBtnDisabled: {
-    backgroundColor: '#A7CDBF',
+    backgroundColor: ui.wellStrong,
     shadowOpacity: 0,
     elevation: 0,
   },
   mainBtnText: {
     fontFamily: 'PlusJakartaSans_600SemiBold',
     fontSize: 15,
-    color: WHITE,
+    color: ui.onAccent,
   },
 });
