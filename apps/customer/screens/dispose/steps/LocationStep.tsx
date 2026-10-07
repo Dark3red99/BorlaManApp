@@ -8,7 +8,7 @@ import {
   ActivityIndicator,
   Keyboard,
 } from 'react-native';
-import MapView, { type Region } from 'react-native-maps';
+import MapView, { type Region } from '@borlaman/shared/map';
 import * as Location from 'expo-location';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 

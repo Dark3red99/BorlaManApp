@@ -22,6 +22,10 @@ import OnboardingScreen from './screens/OnboardingScreen';
 import PendingScreen from './screens/PendingScreen';
 import HomeScreen from './screens/HomeScreen';
 import JobScreen from './screens/JobScreen';
+import { installWebAlert } from '@borlaman/shared/utils/webAlert';
+
+// Web only: show React Native alerts as browser dialogs (no-op on phones).
+installWebAlert();
 
 const Stack = createNativeStackNavigator<RiderStackParamList>();
 

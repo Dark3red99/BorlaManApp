@@ -10,7 +10,7 @@ import {
   Easing,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import MapView, { Marker, Polyline } from 'react-native-maps';
+import MapView, { Marker, Polyline } from '@borlaman/shared/map';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
 import * as pickupService from '../../services/pickupService';

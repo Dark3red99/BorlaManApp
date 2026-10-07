@@ -1,6 +1,6 @@
 import type { GeoPoint } from '@borlaman/shared/types/models';
 
-// Maps are react-native-maps (Apple Maps on iPhone, Google Maps on Android),
+// Maps come from @borlaman/shared/map (react-native-maps on phones, Leaflet on web),
 // which runs in Expo Go. MapTiler is only used for address search; its key
 // is inlined into the bundle at build time (EXPO_PUBLIC_*), so restrict it
 // by app ID in the MapTiler dashboard.

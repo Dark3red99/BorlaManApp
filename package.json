@@ -9,6 +9,12 @@
   "scripts": {
     "customer": "npm run start --workspace @borlaman/customer",
     "rider": "npm run start --workspace @borlaman/rider",
+    "customer:web": "npm run web --workspace @borlaman/customer",
+    "rider:web": "npm run web --workspace @borlaman/rider",
     "typecheck": "npm run typecheck --workspaces --if-present"
+  },
+  "overrides": {
+    "react": "19.2.3",
+    "react-dom": "19.2.3"
   }
 }

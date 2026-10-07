@@ -10,5 +10,13 @@
     "react-native": "*",
     "react-native-safe-area-context": "*",
     "react-native-svg": "*"
+  },
+  "devDependencies": {
+    "@types/leaflet": "^1.9.22",
+    "@types/react-dom": "^19.3.0"
+  },
+  "dependencies": {
+    "leaflet": "^1.9.4",
+    "react-leaflet": "^5.0.0"
   }
 }

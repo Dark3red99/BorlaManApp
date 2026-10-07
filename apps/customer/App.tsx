@@ -33,6 +33,10 @@ import { Colors } from '@borlaman/shared/constants/theme';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from '@borlaman/shared/theme/ThemeContext';
 import type { RootStackParamList } from './types/navigation';
+import { installWebAlert } from '@borlaman/shared/utils/webAlert';
+
+// Web only: show React Native alerts as browser dialogs (no-op on phones).
+installWebAlert();
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
